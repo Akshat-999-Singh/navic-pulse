@@ -1,0 +1,23 @@
+# Virtual environment
+venv/
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Generated model artefacts
+*.joblib
+*.npz
+
+# Generated data -- every CSV here is produced by the pipeline, not authored.
+# telemetry.csv (4.5 MB), detections.csv (2.9 MB), scores.csv (1.8 MB) and
+# window_metadata.csv (1.2 MB) all regenerate deterministically from
+# RANDOM_SEED in config.py.
+*.csv
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
