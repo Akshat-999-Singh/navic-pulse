@@ -21,3 +21,11 @@ __pycache__/
 Thumbs.db
 .idea/
 .vscode/
+
+# Separate research tracks, not part of NavIC Pulse. Excluded entirely: both
+# carry data far past what belongs in this repo -- esa/ is ~8.1 GB and holds
+# two .npy arrays over GitHub's 100 MB file limit, galileo/ is ~252 MB of
+# downloaded MGEX clock products. Give them their own repos if they need
+# version control.
+esa/
+galileo/
