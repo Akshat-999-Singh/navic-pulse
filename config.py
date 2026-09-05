@@ -54,7 +54,15 @@ RANDOM_SEED = 42       # fixed for reproducible runs
 # ---------------------------------------------------------------------------
 WINDOW = 30            # sliding window length, in days
 BOTTLENECK = 12        # autoencoder latent dimension
-K_SIGMA = 3.0          # residual threshold = mean + K_SIGMA * std
+# Residual threshold = mean + K_SIGMA * std. Not 3: the healthy score
+# distribution is right-skewed, with a maximum 6.5 sigma above its own mean, so a
+# 3 sigma bar sits INSIDE the healthy tail and manufactures false positives from
+# clean clocks. At 8 sigma the bar clears the whole healthy population with
+# margin. Measured over the sweep in navic_recalibrate.py, moving 3 -> 8 lifts
+# precision 0.961 -> 0.986 and leaves recall, the 5/5 faulted units caught and the
+# 0/5 false-alarm satellites unchanged. This is the same right-skew argument
+# detect.py already makes for the CUSUM h; it just was not applied here.
+K_SIGMA = 8.0
 CUSUM_PERSISTENCE = 60 # consecutive alarm windows required to declare a
                        # detection. A single-window alarm at a 1% false
                        # alarm rate fires on healthy clocks by day 60-429

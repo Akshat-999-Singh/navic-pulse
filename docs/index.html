@@ -1,1504 +1,1672 @@
 <!doctype html>
-<html lang="en" data-palette="#35c7e0,#0ca30c,#fab219,#d03b3b">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NavIC Pulse — Clock Health Dashboard</title>
+<title>NavIC Pulse — Constellation</title>
 <style>
   :root {
-    color-scheme: dark;
+    color-scheme: light;
 
-    /* surfaces */
-    --bg:            #0b0f1a;
-    --card:          #10151f;
-    --card-hover:    #141a26;
-    --plate:         #fcfcfb;   /* light plate the figures are mounted on */
-    --rule:          rgba(230, 233, 239, 0.10);
-    --rule-strong:   rgba(230, 233, 239, 0.18);
+    --bg:          #FAF7F2;
+    --surface:     #FFFDF9;
+    --surface-2:   #F1ECE3;
+    --rule:        #E6DFD4;
+    --rule-soft:   #EFE9E1;
 
-    /* ink */
-    --ink:           #e6e9ef;
-    --ink-secondary: #9aa3b8;
-    --ink-muted:     #8b93a7;
+    --ink:         #2A2622;
+    --ink-2:       #6A6058;
+    --ink-3:       #948A7E;
 
-    /* the single accent */
-    --accent:        #35c7e0;
+    --accent:      #A85A38;
+    --accent-2:    #C0714F;
 
-    /* status (reserved — never used for anything but state) */
-    --good:          #0ca30c;
-    --good-text:     #3fd13f;
-    --warn:          #fab219;
-    --crit:          #d03b3b;
-    --crit-text:     #f0605f;
+    --sage:        #2C7A63;
+    --sage-wash:   #E3EEE9;
+    --amber:       #BE8722;
+    --amber-ink:   #8A5F13;
+    --amber-wash:  #F6EBD6;
+    --brick:       #A32A1C;
+    --brick-wash:  #F6E0DC;
 
-    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --shadow: 0 1px 2px rgba(42,38,34,.04), 0 1px 10px rgba(42,38,34,.035);
   }
 
   * { box-sizing: border-box; }
-
   html { -webkit-text-size-adjust: 100%; }
-
   body {
     margin: 0;
     background: var(--bg);
     color: var(--ink);
     font-family: var(--sans);
-    font-size: 17px;
-    line-height: 1.55;
+    font-size: 15px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 
-  .wrap {
-    max-width: 1560px;
-    margin: 0 auto;
-    padding: 0 48px;
-  }
-
-  section { padding: 76px 0; border-top: 1px solid var(--rule); }
-  section:first-of-type { border-top: 0; }
-
-  /* ---------- section headings ---------- */
-  .eyebrow {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 10px;
-  }
-  h2 {
-    font-size: 30px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    margin: 0 0 8px;
-  }
-  .lede {
-    margin: 0 0 40px;
-    color: var(--ink-secondary);
-    font-size: 18px;
-    max-width: 78ch;
-  }
+  .app { max-width: 920px; margin: 0 auto; padding: 26px 20px 108px; }
 
   /* ---------- header ---------- */
-  header {
-    padding: 92px 0 68px;
-  }
-  .tag {
-    display: inline-block;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent);
-    border: 1px solid rgba(53, 199, 224, 0.38);
-    border-radius: 3px;
-    padding: 5px 11px;
-    margin-bottom: 26px;
-  }
-  h1 {
-    font-size: 68px;
-    line-height: 1.03;
-    font-weight: 650;
-    letter-spacing: -0.028em;
-    margin: 0 0 16px;
-  }
-  h1 .pulse { color: var(--accent); }
-  .subtitle {
-    font-size: 23px;
-    color: var(--ink-secondary);
-    margin: 0;
-    max-width: 60ch;
-    font-weight: 400;
-  }
+  .masthead { margin-bottom: 24px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .brand h1 { font-size: 26px; line-height: 1.15; letter-spacing: -.02em; margin: 0; font-weight: 600; }
+  .brand .screen { font-size: 13px; color: var(--accent); font-weight: 500; }
+  .tagline { margin: 7px 0 0; color: var(--ink-2); font-size: 14px; max-width: 58ch; }
 
-  /* ---------- stat cards ---------- */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 18px;
-  }
-  .stat {
-    background: var(--card);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 26px 24px 22px;
-    transition: border-color 160ms ease, background-color 160ms ease;
-  }
-  .stat:hover { border-color: var(--rule-strong); background: var(--card-hover); }
-  .stat .label {
-    font-size: 12.5px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-    margin-bottom: 14px;
-  }
-  .stat .value {
-    font-size: 46px;
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1;
-    margin-bottom: 12px;
-  }
-  .stat .value .den {
-    font-size: 26px;
-    font-weight: 500;
-    color: var(--ink-muted);
-    letter-spacing: -0.01em;
-  }
-  .stat .note {
-    font-size: 14px;
-    color: var(--ink-secondary);
-    line-height: 1.4;
-  }
-  .stat.is-accent .value { color: var(--accent); }
-  /* tabular only mid-count, so the digits do not jitter; the resting
-     state keeps proportional figures */
-  .counting { font-variant-numeric: tabular-nums; }
+  .factbar { display: flex; flex-wrap: wrap; gap: 12px 26px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--rule); }
+  .fact { display: flex; flex-direction: column; gap: 1px; }
+  .fact-v { font-size: 17px; font-weight: 600; }
+  .fact-k { font-size: 12px; color: var(--ink-3); }
 
-  /* ---------- constellation ---------- */
-  .fleet {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 18px;
-    /* cards size to their own content, so expanding one does not stretch its
-       whole row and strand the neighbours' content at the bottom */
-    align-items: start;
-  }
-  .sat {
-    background: var(--card);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 22px 22px 20px;
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    transition: transform 200ms ease, border-color 200ms ease,
-                background-color 200ms ease, box-shadow 200ms ease;
-  }
-  .sat:hover { border-color: var(--rule-strong); background: var(--card-hover); transform: translateY(-3px); }
-  .sat:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .provenance { margin: 14px 0 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
 
-  /* hover glow carries the card's own status colour */
-  .sat.st-nominal:hover {
-    border-color: rgba(12, 163, 12, 0.55);
-    box-shadow: 0 0 0 1px rgba(12, 163, 12, 0.22), 0 10px 28px -14px rgba(12, 163, 12, 0.7);
+  /* ---------- explainer ---------- */
+  .explainer {
+    margin: 22px 0; padding: 18px 18px 16px;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; box-shadow: var(--shadow);
   }
-  .sat.st-warning:hover {
-    border-color: rgba(250, 178, 25, 0.55);
-    box-shadow: 0 0 0 1px rgba(250, 178, 25, 0.22), 0 10px 28px -14px rgba(250, 178, 25, 0.7);
+  .ex-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 560px) { .ex-cols { grid-template-columns: 1fr; gap: 18px; } }
+  .ex-col h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .ex-col h3 .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; vertical-align: 1px; }
+  .ex-col p { margin: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.55; }
+  .ex-col .src { display: block; margin-top: 7px; font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+  .ex-note {
+    margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--rule-soft);
+    font-size: 13px; color: var(--ink-2); line-height: 1.55;
   }
-  .sat.st-critical:hover {
-    border-color: rgba(240, 96, 95, 0.6);
-    box-shadow: 0 0 0 1px rgba(240, 96, 95, 0.26), 0 10px 28px -14px rgba(240, 96, 95, 0.75);
-  }
+  .ex-note b { color: var(--ink); font-weight: 600; }
 
-  /* ---------- expandable detail (0fr → 1fr animates to auto height) ---------- */
-  .sat-more {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 14px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-    transition: color 180ms ease;
+  /* ---------- filters ---------- */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .fpill {
+    font: inherit; font-size: 13px; cursor: pointer;
+    padding: 6px 13px; border-radius: 999px;
+    border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2);
+    transition: background .12s, color .12s, border-color .12s;
   }
-  .sat:hover .sat-more { color: var(--ink-secondary); }
-  .sat-more .chev { transition: transform 260ms ease; line-height: 1; }
-  .sat.open .sat-more .chev { transform: rotate(180deg); }
+  .fpill:hover { border-color: var(--accent-2); color: var(--ink); }
+  .fpill[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .fpill .c { font-family: var(--mono); font-size: 12px; opacity: .72; margin-left: 6px; }
 
-  .sat-detail {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    transition: grid-template-rows 280ms ease, opacity 200ms ease;
+  /* ---------- legend ---------- */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 7px 18px; align-items: center;
+    padding: 11px 14px; margin-bottom: 14px;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+    font-size: 12px; color: var(--ink-2);
   }
-  .sat.open .sat-detail { grid-template-rows: 1fr; opacity: 1; }
-  .sd-in { overflow: hidden; }
-  .sd-block { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--rule); }
-  .sd-k {
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 5px;
-  }
-  .sd-v { font-size: 13.5px; line-height: 1.5; color: var(--ink-secondary); }
-  .sd-v b { color: var(--ink); font-weight: 600; }
-  .sd-v sup { font-size: 0.75em; line-height: 0; }
+  .lg { display: inline-flex; align-items: center; gap: 7px; }
+  .lg i { display: inline-block; flex: none; }
+  .lg-healthy  { width: 16px; height: 8px; border-radius: 2px; background: var(--sage); }
+  .lg-observed { width: 16px; height: 8px; border-radius: 2px; background: var(--amber); }
+  .lg-proj     { width: 16px; height: 8px; border-radius: 2px;
+                 background: repeating-linear-gradient(90deg, var(--amber) 0 3px, transparent 3px 6px); }
+  .lg-detect   { width: 2px; height: 11px; background: var(--amber-ink); }
+  .lg-today    { width: 2px; height: 14px; background: var(--ink); }
+  .lg-limit    { width: 3px; height: 14px; background: var(--brick); }
+  .lg-ci       { width: 16px; height: 4px; border-radius: 2px; background: rgba(190,135,34,.5); }
 
-  /* ---------- filter pills ---------- */
-  .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
-  .fbtn {
-    font-family: inherit;
-    font-size: 13.5px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    color: var(--ink-secondary);
-    background: transparent;
-    border: 1px solid var(--rule);
-    border-radius: 100px;
-    padding: 7px 16px;
-    cursor: pointer;
-    transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+  /* ---------- cards ---------- */
+  .cards { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+    transition: transform .3s cubic-bezier(.2,.7,.3,1), opacity .22s ease,
+                box-shadow .18s ease, border-color .18s ease;
   }
-  .fbtn:hover { color: var(--ink); border-color: var(--rule-strong); }
-  .fbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .fbtn[aria-pressed="true"] {
-    color: #06121a;
-    background: var(--accent);
-    border-color: var(--accent);
+  .card.is-open { border-color: #DBD1C3; }
+  /* lift on hover, bordered in the card's own status colour */
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(42,38,34,.10), 0 1px 2px rgba(42,38,34,.05);
+    border-color: var(--card-accent, var(--rule));
   }
-  .fbtn .c { opacity: 0.62; font-weight: 500; margin-left: 6px; }
-  .sat.is-hidden { display: none; }
+  .card.is-leaving  { opacity: 0; transform: scale(.985); }
+  .card.is-entering { opacity: 0; transform: translateY(8px); }
 
-  /* ---------- critical dot pulse (critical only) ---------- */
-  @keyframes critpulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(240, 96, 95, 0.5); }
-    55%      { box-shadow: 0 0 0 4px rgba(240, 96, 95, 0); }
+  .card-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    width: 100%; text-align: left; font: inherit; color: inherit;
+    background: none; border: 0; padding: 14px 16px 10px; cursor: pointer;
   }
-  .pill.critical .dot { animation: critpulse 2.6s ease-in-out infinite; }
-
-  /* ---------- scroll reveal (class added by JS, so no-JS stays visible) ---------- */
-  .reveal { opacity: 0; transform: translateY(12px); }
-  .reveal.revealed {
-    opacity: 1;
-    transform: none;
-    transition: opacity 400ms ease, transform 400ms ease;
-  }
-
-  /* ---------- figure lightbox ---------- */
-  .plate img { cursor: zoom-in; }
-  .lb {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    background: rgba(5, 8, 14, 0.94);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 18px;
-    padding: 40px;
-    cursor: zoom-out;
-    opacity: 0;
-    transition: opacity 200ms ease;
-  }
-  .lb.on { opacity: 1; }
-  .lb[hidden] { display: none; }
-  .lb img {
-    max-width: 100%;
-    max-height: calc(100vh - 170px);
-    background: var(--plate);
-    border-radius: 6px;
-    padding: 14px;
-    box-sizing: border-box;
-  }
-  .lb-cap {
-    margin: 0;
-    max-width: 90ch;
-    text-align: center;
-    font-size: 15.5px;
-    color: var(--ink-secondary);
-  }
-  .lb-x {
-    position: absolute;
-    top: 22px;
-    right: 26px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-secondary);
-    background: transparent;
-    border: 1px solid var(--rule-strong);
-    border-radius: 100px;
-    padding: 8px 16px;
-    cursor: pointer;
-    transition: color 180ms ease, border-color 180ms ease;
-  }
-  .lb-x:hover { color: var(--ink); border-color: var(--ink-secondary); }
-
-  /* ---------- reduced motion: cut all of it ---------- */
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-      scroll-behavior: auto !important;
-    }
-    .sat:hover { transform: none; }
-    .reveal { opacity: 1; transform: none; }
-  }
-
-  .sat-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-  .sat-name {
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-  .sat-clock {
-    font-size: 13px;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-    margin-bottom: 18px;
+  .card-head:hover .ch-id { color: var(--accent); }
+  .card-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+  .ch-main { display: block; min-width: 0; }
+  .ch-right { display: block; flex: none; text-align: right; }
+  .ch-id { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+  .chev { width: 8px; height: 8px; flex: none;
+          border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3);
+          transform: rotate(45deg) translate(-2px,-2px); transition: transform .16s; }
+  .card.is-open .chev { transform: rotate(-135deg) translate(-2px,-2px); }
+  .ch-sub { display: block; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  /* ---------- projection readout ---------- */
+  .proj { padding: 0 16px; }
+  .proj-row { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+  .proj-lbl { font-size: 12.5px; color: var(--ink-2); }
+  .proj-val { text-align: right; white-space: nowrap; }
+  .proj-val .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+  .proj-val .unit { font-size: 12.5px; color: var(--ink-2); margin-left: 2px; }
+  .proj-ci { display: block; margin-top: 1px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+  .proj-none { font-size: 13px; color: var(--ink-3); }
+  .proj-caveat {
+    margin-top: 9px; padding-left: 9px; border-left: 2px solid var(--amber);
+    font-size: 12.5px; color: var(--ink-2); line-height: 1.45;
   }
 
   .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 5px 10px;
-    border-radius: 100px;
-    white-space: nowrap;
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
   }
-  .pill .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex: none;
-  }
-  .pill.nominal  { color: var(--good-text); background: rgba(12, 163, 12, 0.13);  border: 1px solid rgba(12, 163, 12, 0.42); }
-  .pill.nominal  .dot { background: var(--good-text); }
-  .pill.warning  { color: var(--warn);      background: rgba(250, 178, 25, 0.13); border: 1px solid rgba(250, 178, 25, 0.42); }
-  .pill.warning  .dot { background: var(--warn); }
-  .pill.critical { color: var(--crit-text); background: rgba(208, 59, 59, 0.16);  border: 1px solid rgba(208, 59, 59, 0.50); }
-  .pill.critical .dot { background: var(--crit-text); }
+  .pill-normal   { background: var(--sage-wash);  color: var(--sage);      box-shadow: inset 0 0 0 1px rgba(44,122,99,.22); }
+  .pill-warning  { background: var(--amber-wash); color: var(--amber-ink); box-shadow: inset 0 0 0 1px rgba(190,135,34,.32); }
+  .pill-critical { background: var(--brick-wash); color: var(--brick);     box-shadow: inset 0 0 0 1px rgba(163,42,28,.25); }
 
-  /* stacked rows — the qualified labels are too long for a two-column row */
-  .rows { margin-top: auto; }
-  .row { padding: 10px 0; border-top: 1px solid var(--rule); }
-  .row .k {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-    margin-bottom: 4px;
-  }
-  .row .k .q {
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 400;
-    opacity: 0.78;
-  }
-  .row .v { font-size: 16px; color: var(--ink); }
-  .row .v.dim { color: var(--ink-secondary); }
-  .row .v .sub { font-size: 13px; color: var(--ink-muted); }
-  .rul { font-size: 19px; font-weight: 600; }
-  .rul .pm { color: var(--ink-muted); font-weight: 400; font-size: 15px; }
+  /* ---------- lifetime strip ---------- */
+  .stripwrap { padding: 12px 16px 14px; }
+  .strip { position: relative; height: 30px; }
+  .rail { position: absolute; left: 0; right: 0; top: 11px; height: 9px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+  .seg { position: absolute; top: 0; bottom: 0; }
+  .seg-healthy  { background: var(--sage); }
+  .seg-observed { background: var(--amber); box-shadow: -2px 0 0 0 var(--surface-2); }
+  .seg-proj     { background: repeating-linear-gradient(90deg, var(--amber) 0 3px, transparent 3px 7px); }
+  .ci          { position: absolute; top: 22px; height: 4px; min-width: 2px; border-radius: 2px; background: rgba(190,135,34,.5); }
+  .tick-detect { position: absolute; top: 2px;  width: 2px; height: 10px; border-radius: 1px; background: var(--amber-ink); transform: translateX(-1px); }
+  .mark-today  { position: absolute; top: 5px;  width: 2px; height: 21px; border-radius: 1px; background: var(--ink); transform: translateX(-1px); }
+  .mark-today::after { content: ""; position: absolute; left: -2px; top: -4px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+  .mark-limit  { position: absolute; top: 7px;  width: 3px; height: 17px; border-radius: 1px; background: var(--brick); transform: translateX(-1.5px); }
+  .axis { display: flex; justify-content: space-between; margin-top: 3px; font-size: 11px; color: var(--ink-3); }
+  .axis .num { font-size: 11px; }
 
-  /* ---------- three-stage timeline strip ---------- */
-  .tk { margin-top: 18px; }
-  .tk-top { position: relative; height: 16px; }
-  .tk-now-l {
-    position: absolute;
-    top: 0;
-    transform: translateX(-50%);
-    white-space: nowrap;
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: var(--accent);
-  }
-  .tk-wrap { position: relative; }
-  .tk-bar {
-    position: relative;
-    height: 10px;
-    border-radius: 5px;
-    background: rgba(230, 233, 239, 0.07);
-    overflow: hidden;
-  }
-  .tk-bar > span { position: absolute; top: 0; height: 100%; }
-  .tk-h { left: 0; background: rgba(12, 163, 12, 0.50); }      /* healthy */
-  .tk-d { background: rgba(250, 178, 25, 0.80); }              /* degrading, observed */
-  .tk-p {                                                      /* ahead — projected */
-    background: repeating-linear-gradient(90deg,
-      rgba(250, 178, 25, 0.34) 0 5px, transparent 5px 10px);
-  }
-  .tk-f { right: 0; width: 4px; background: var(--crit-text); }/* failure limit */
+  /* ---------- detail ---------- */
+  .detail { border-top: 1px solid var(--rule-soft); background: #FDFAF5; padding: 2px 16px 18px; }
+  .dsec { padding-top: 15px; }
+  .dsec + .dsec { border-top: 1px solid var(--rule-soft); margin-top: 15px; }
+  .dsec h4 { margin: 0 0 9px; font-size: 12px; font-weight: 600; color: var(--ink-3); letter-spacing: .02em; }
 
-  /* markers ride above the clipped bar so they can overhang it */
-  .tk-mk { position: absolute; inset: 0; }
-  .tk-mk > span { position: absolute; transform: translateX(-50%); }
-  .tk-det {
-    top: -2px; width: 2px; height: 14px;
-    background: var(--ink); border-radius: 1px;
-    box-shadow: 0 0 0 1.5px var(--card);
-  }
-  .tk-cur {
-    top: -1px; width: 12px; height: 12px; border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 0 2.5px var(--card);
-  }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 7px 16px; margin: 0; font-size: 13.5px; }
+  .kv dt { color: var(--ink-2); }
+  .kv dd { margin: 0; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .kv dd.txt { font-family: var(--sans); font-size: 13.5px; }
 
-  /* shared legend for the strip */
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 9px 22px;
-    margin-bottom: 20px;
-    font-size: 13px;
-    color: var(--ink-muted);
-  }
-  .lg { display: inline-flex; align-items: center; gap: 7px; }
-  .lg .sw { width: 22px; height: 8px; border-radius: 4px; flex: none; }
-  .lg .sw.tick { width: 2px; height: 13px; border-radius: 1px; background: var(--ink); }
-  .lg .sw.cur  { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+  .dnote { margin: 11px 0 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
 
-  /* ---------- status vs remaining-life explainer ---------- */
-  .explainer {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 56px;
-    background: var(--card);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 28px 32px;
-    margin-bottom: 30px;
+  table.chan { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.chan th { text-align: right; font-weight: 500; color: var(--ink-3); font-size: 11.5px; padding: 0 0 6px; }
+  table.chan th:first-child { text-align: left; }
+  table.chan td { padding: 6px 0; border-top: 1px solid var(--rule-soft); text-align: right;
+                  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12.5px; white-space: nowrap; }
+  table.chan td:first-child { text-align: left; font-family: var(--sans); font-size: 13px; color: var(--ink-2); white-space: normal; }
+  table.chan td .u { color: var(--ink-3); font-size: 11px; margin-left: 3px; }
+
+  .sevrow { display: flex; gap: 10px; flex-wrap: wrap; }
+  .sevbox { flex: 1 1 170px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 9px; background: var(--surface); }
+  .sevbox .lbl { font-size: 11.5px; color: var(--ink-3); }
+  .sevbox .day { margin-bottom: 7px; font-size: 12px; color: var(--ink-2); font-family: var(--mono); }
+
+  .spark { display: block; width: 100%; height: auto; margin-top: 2px; }
+
+  /* ---------- tooltip ---------- */
+  #tip {
+    position: fixed; z-index: 60; pointer-events: none; opacity: 0;
+    transition: opacity .1s; max-width: 250px;
+    background: var(--ink); color: #FDFAF5; font-size: 12px; line-height: 1.45;
+    padding: 6px 9px; border-radius: 7px; box-shadow: 0 4px 14px rgba(42,38,34,.22);
   }
-  .ex-h {
-    font-size: 12.5px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 12px;
-  }
-  .ex-lead {
-    margin: 0 0 7px;
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--ink);
-  }
-  .ex-sub { margin: 0; font-size: 15.5px; color: var(--ink-secondary); }
-  .ex-bands { display: flex; flex-wrap: wrap; gap: 9px 22px; margin-top: 16px; }
-  .band {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--ink-secondary);
-  }
-  .band .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-  .band .n { color: var(--ink); font-weight: 600; }
-  .ex-note {
-    grid-column: 1 / -1;
-    margin-top: 26px;
-    padding-top: 22px;
+  #tip .t { font-weight: 600; }
+  #tip .v { font-family: var(--mono); }
+
+  /* ---------- tabs ---------- */
+  .tabbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    background: rgba(255,253,249,.96); backdrop-filter: blur(8px);
     border-top: 1px solid var(--rule);
-    font-size: 17px;
-    line-height: 1.55;
-    color: var(--ink);
   }
-  .ex-note b { color: var(--accent); font-weight: 600; }
+  .tabbar-in { max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: repeat(4,1fr); }
+  .tab {
+    font: inherit; background: none; border: 0; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 8px 4px calc(9px + env(safe-area-inset-bottom));
+    color: var(--ink-3); font-size: 11.5px;
+    border-top: 2px solid transparent;
+  }
+  .tab svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .tab:hover { color: var(--ink-2); }
+  .tab[aria-selected="true"] { color: var(--accent); border-top-color: var(--accent); }
 
-  .grid-note {
-    margin-top: 24px;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--ink-muted);
-    max-width: 108ch;
-  }
+  /* ---------- panels, shared by the analysis tabs ---------- */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
 
-  /* ---------- figures ---------- */
-  .figs {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 34px 28px;
+  .panel {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 16px; margin-bottom: 12px;
   }
-  /* figures stretch to a common height so captions in a row share a baseline;
-     the shorter figure centres inside its plate — white on white, invisible. */
-  figure { margin: 0; display: flex; flex-direction: column; height: 100%; }
-  .plate {
-    background: var(--plate);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 12px;
-    line-height: 0;
-    flex: 1;
-    display: flex;
-    align-items: center;
-  }
-  .plate img {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: 3px;
-  }
-  figcaption {
-    margin-top: 14px;
-    font-size: 15.5px;
-    line-height: 1.5;
-    color: var(--ink-secondary);
-  }
-  figcaption b {
-    color: var(--ink);
-    font-weight: 600;
-    display: block;
-    font-size: 16.5px;
-    margin-bottom: 3px;
-  }
-  figcaption .hl { color: var(--accent); font-weight: 600; }
+  .panel h3 { margin: 0 0 3px; font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+  .panel .sub { margin: 0 0 11px; font-size: 12.5px; color: var(--ink-3); line-height: 1.45; }
+  .panel .cap { margin: 11px 0 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+  .panel .cap + .cap { margin-top: 7px; color: var(--ink-3); }
+  .chart { display: block; width: 100%; height: auto; }
+  .chart + .chart { margin-top: 10px; }
 
-  /* ---------- pipeline ---------- */
-  .steps {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 18px;
+  .keyline {
+    margin: 11px 0 0; padding-left: 10px; border-left: 2px solid var(--accent);
+    font-size: 13px; color: var(--ink); line-height: 1.5;
   }
-  .step {
-    background: var(--card);
-    border: 1px solid var(--rule);
-    border-radius: 8px;
-    padding: 22px;
-    position: relative;
+  .keyline b { font-weight: 600; }
+
+  .hero { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .hero .v { font-family: var(--mono); font-size: 34px; font-weight: 600; letter-spacing: -.02em; }
+  .hero .k { font-size: 13px; color: var(--ink-2); }
+
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data th {
+    text-align: right; font-weight: 500; color: var(--ink-3); font-size: 11.5px;
+    padding: 0 0 7px; border-bottom: 1px solid var(--rule); white-space: nowrap;
   }
-  .step .n {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: var(--accent);
-    margin-bottom: 12px;
+  table.data th:first-child { text-align: left; }
+  table.data td {
+    padding: 7px 0; border-bottom: 1px solid var(--rule-soft); text-align: right;
+    font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12.5px; white-space: nowrap;
   }
-  .step h3 {
-    font-size: 17.5px;
-    font-weight: 600;
-    margin: 0 0 7px;
-    letter-spacing: -0.005em;
-  }
-  .step p {
-    margin: 0;
-    font-size: 14.5px;
-    line-height: 1.5;
-    color: var(--ink-secondary);
+  table.data td:first-child { text-align: left; font-family: var(--sans); font-size: 13px; color: var(--ink-2); }
+  table.data tr:last-child td { border-bottom: 0; }
+  table.data td.neg { color: var(--ink-3); }
+  table.data + .cap { margin-top: 11px; }
+  .tscroll { overflow-x: auto; }
+
+  .clegend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 10px; font-size: 12px; color: var(--ink-2); }
+  .clegend span { display: inline-flex; align-items: center; gap: 6px; }
+  .clegend i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; flex: none; }
+
+  .stub { padding: 72px 0; text-align: center; }
+  .stub h2 { margin: 0 0 6px; font-size: 18px; font-weight: 600; color: var(--ink-2); }
+  .stub p { margin: 0; font-size: 13.5px; color: var(--ink-3); }
+
+  /* ---------- motion ---------- */
+  /* Entry: hold at opacity 0 until observed, then run once and drop the class
+     so nothing keeps a claim on `transform` (the card hover needs it back). */
+  .reveal { opacity: 0; }
+  .rise { animation: rise .4s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
   }
 
-  /* ---------- limits ---------- */
-  .limits {
-    border-left: 2px solid var(--rule-strong);
-    padding-left: 26px;
-    max-width: 96ch;
-  }
-  .limits li {
-    color: var(--ink-muted);
-    font-size: 16px;
-    line-height: 1.62;
-    margin-bottom: 13px;
-  }
-  .limits li:last-child { margin-bottom: 0; }
-  .limits li b { color: var(--ink-secondary); font-weight: 600; }
-  .limits ul { margin: 0; padding-left: 20px; }
+  .screen { transition: opacity .16s ease; }
+  .screen.out { opacity: 0; }
 
-  /* ---------- footer ---------- */
-  footer {
-    border-top: 1px solid var(--rule);
-    padding: 40px 0 64px;
-    font-size: 15px;
-    color: var(--ink-muted);
-  }
-  footer .wrap {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 24px;
-    flex-wrap: wrap;
-  }
-  footer a { color: var(--accent); text-decoration: none; }
-  footer a:hover { text-decoration: underline; }
+  /* ---------- chart lightbox ---------- */
+  svg.chart, svg.spark { cursor: zoom-in; border-radius: 8px; transition: box-shadow .16s ease; }
+  svg.chart:hover, svg.spark:hover,
+  svg.chart:focus-visible, svg.spark:focus-visible { box-shadow: 0 0 0 2px var(--accent-2); outline: none; }
 
-  /* ---------- responsive ---------- */
-  @media (max-width: 1400px) {
-    .stats { grid-template-columns: repeat(3, 1fr); }
-    .fleet { grid-template-columns: repeat(4, 1fr); }
+  #lightbox {
+    position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center;
+    padding: 28px 20px; background: rgba(30,26,22,.88);
+    opacity: 0; transition: opacity .18s ease;
   }
-  @media (max-width: 1080px) {
-    .wrap { padding: 0 28px; }
-    h1 { font-size: 50px; }
-    .fleet { grid-template-columns: repeat(2, 1fr); }
-    .steps { grid-template-columns: repeat(2, 1fr); }
-    .figs  { grid-template-columns: 1fr; }
-    .explainer { grid-template-columns: 1fr; gap: 30px; }
-    .ex-note { margin-top: 0; }
+  #lightbox.on { opacity: 1; }
+  .lb-plate {
+    background: var(--surface); border-radius: 14px; padding: 20px 22px;
+    max-width: 1180px; width: 100%; max-height: 90vh; overflow: auto;
+    box-shadow: 0 24px 60px rgba(0,0,0,.42);
+    transform: translateY(10px) scale(.99); transition: transform .2s cubic-bezier(.2,.7,.3,1);
   }
-  @media (max-width: 680px) {
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .fleet, .steps { grid-template-columns: 1fr; }
-    h1 { font-size: 38px; }
-    .subtitle { font-size: 19px; }
+  #lightbox.on .lb-plate { transform: none; }
+  .lb-cap { font-size: 14px; font-weight: 600; }
+  .lb-sub { margin: 3px 0 14px; font-size: 12.5px; color: var(--ink-3); }
+  .lb-body svg { display: block; width: 100%; height: auto; cursor: zoom-out; box-shadow: none; }
+  .lb-close {
+    position: fixed; top: 16px; right: 18px; width: 36px; height: 36px; border-radius: 50%;
+    border: 0; background: rgba(253,250,245,.16); color: #FDFAF5;
+    font: 400 21px/1 var(--sans); cursor: pointer; transition: background .15s ease;
   }
+  .lb-close:hover { background: rgba(253,250,245,.3); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; }
+    .rise { animation: none; }
+    .card, .screen, #lightbox, .lb-plate, .fpill, svg.chart, svg.spark { transition: none; }
+    .card:hover { transform: none; }
+  }
+
+  [hidden] { display: none !important; }
 </style>
 </head>
 <body>
 
-<!-- ==================== HEADER ==================== -->
-<header>
-  <div class="wrap">
-    <div class="tag">SIH PS 26209</div>
-    <h1>NavIC&nbsp;<span class="pulse">Pulse</span></h1>
-    <p class="subtitle">AI-based satellite clock health monitoring &amp; remaining-life prognosis</p>
-  </div>
-</header>
+<div class="app">
+  <!-- ==================== CONSTELLATION ==================== -->
+  <section id="screen-constellation" class="screen">
+    <header class="masthead">
+      <div class="brand">
+        <h1>NavIC Pulse</h1>
+        <span class="screen">Constellation</span>
+      </div>
+      <p class="tagline" id="tagline"></p>
+      <div class="factbar" id="factbar"></div>
+      <p class="provenance" id="provenance"></p>
+    </header>
 
-<!-- ==================== CONSTELLATION ==================== -->
-<section>
-  <div class="wrap">
-    <p class="eyebrow">Constellation</p>
-    <h2>Ten clocks, current state</h2>
-
-    <!-- the question judges always ask, answered before it is asked -->
-    <div class="explainer">
-      <div>
-        <div class="ex-h">Status</div>
-        <p class="ex-lead">How abnormal the telemetry looks today.</p>
-        <p class="ex-sub">From the final 30-day window&#39;s reconstruction error.</p>
-        <div class="ex-bands">
-          <span class="band"><span class="dot" style="background:var(--good-text)"></span><span class="n">Nominal</span> below 0.282</span>
-          <span class="band"><span class="dot" style="background:var(--warn)"></span><span class="n">Warning</span> above 0.282</span>
-          <span class="band"><span class="dot" style="background:var(--crit-text)"></span><span class="n">Critical</span> above 79.76</span>
+    <div class="explainer reveal">
+      <div class="ex-cols">
+        <div class="ex-col">
+          <h3><span class="swatch" style="background:var(--amber)"></span>Status</h3>
+          <p id="ex-status"></p>
+          <span class="src" id="ex-status-src"></span>
+        </div>
+        <div class="ex-col">
+          <h3><span class="swatch" style="background:var(--brick)"></span>Remaining life</h3>
+          <p id="ex-rul"></p>
+          <span class="src" id="ex-rul-src"></span>
         </div>
       </div>
-      <div>
-        <div class="ex-h">Remaining life</div>
-        <p class="ex-lead">How fast it&#39;s heading toward failure.</p>
-        <p class="ex-sub">Projected from the RAFS signal-level decline to the 0.85 limit.</p>
-      </div>
-      <p class="ex-note">
-        <b>These are independent measurements.</b> A clock can look highly abnormal yet decline
-        slowly, or look moderately abnormal and decline fast. Operators need both: status sets
-        investigation priority, remaining life sets maintenance schedule.
-      </p>
+      <p class="ex-note"><b>These two are computed independently.</b> <span id="ex-indep"></span></p>
     </div>
 
-    <div class="filters" role="group" aria-label="Filter satellites">
-      <button class="fbtn" type="button" data-filter="all" aria-pressed="true">All <span class="c">10</span></button>
-      <button class="fbtn" type="button" data-filter="faulted" aria-pressed="false">Faulted <span class="c">5</span></button>
-      <button class="fbtn" type="button" data-filter="healthy" aria-pressed="false">Healthy <span class="c">5</span></button>
-      <button class="fbtn" type="button" data-filter="imported" aria-pressed="false">Imported <span class="c">8</span></button>
-      <button class="fbtn" type="button" data-filter="indigenous" aria-pressed="false">Indigenous <span class="c">2</span></button>
+    <div class="filters" id="filters"></div>
+
+    <div class="legend reveal">
+      <span class="lg"><i class="lg-healthy"></i>Healthy</span>
+      <span class="lg"><i class="lg-observed"></i>Observed degradation</span>
+      <span class="lg"><i class="lg-proj"></i>Projected</span>
+      <span class="lg"><i class="lg-ci"></i>95% interval</span>
+      <span class="lg"><i class="lg-detect"></i>Detection</span>
+      <span class="lg"><i class="lg-today"></i>Today</span>
+      <span class="lg"><i class="lg-limit"></i>Failure limit</span>
     </div>
 
-    <div class="legend">
-      <span class="lg"><span class="sw" style="background:rgba(12,163,12,0.50)"></span>healthy</span>
-      <span class="lg"><span class="sw" style="background:rgba(250,178,25,0.80)"></span>degrading (observed)</span>
-      <span class="lg"><span class="sw" style="background:repeating-linear-gradient(90deg,rgba(250,178,25,0.34) 0 5px,transparent 5px 10px)"></span>projected</span>
-      <span class="lg"><span class="sw tick"></span>detected</span>
-      <span class="lg"><span class="sw cur"></span>now</span>
-      <span class="lg"><span class="sw" style="width:4px;background:var(--crit-text)"></span>failure limit (0.85)</span>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <!-- ==================== EVIDENCE ==================== -->
+  <section id="screen-evidence" class="screen" hidden>
+    <header class="masthead">
+      <div class="brand"><h1>NavIC Pulse</h1><span class="screen">Evidence</span></div>
+      <p class="tagline" id="ev-lede"></p>
+    </header>
+    <div class="filters" id="ev-pills"></div>
+    <div class="grid2">
+      <div class="panel reveal" id="ev-traj"></div>
+      <div class="panel reveal" id="ev-dist"></div>
     </div>
+    <div class="panel reveal" id="ev-note"></div>
+  </section>
 
-    <div class="fleet">
-
-      <div class="sat st-critical" data-state="faulted" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1D</span>
-          <span class="pill critical"><span class="dot"></span>Critical</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">Degraded <span class="sub">&middot; onset day 900</span></span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 907 <span class="sub">&middot; 7-day latency</span></span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">53 <span class="pm">&plusmn; 2 d</span></span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy to day 900, degrading since; detected day 907; now day 937; projected to reach the failure limit at day 990.">
-          <div class="tk-top"><span class="tk-now-l" style="left:48.8%">now &middot; d937</span></div>
-          <div class="tk-wrap">
-            <div class="tk-bar">
-              <span class="tk-h" style="width:13.0%"></span>
-              <span class="tk-d" style="left:13.0%; width:35.8%"></span>
-              <span class="tk-p" style="left:48.8%; width:51.2%"></span>
-              <span class="tk-f"></span>
-            </div>
-            <div class="tk-mk">
-              <span class="tk-det" style="left:19.8%"></span>
-              <span class="tk-cur" style="left:48.8%"></span>
-            </div>
-          </div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">Long-running degradation. The clock has been sliding out of spec since early in the mission, so by the time it is flagged it has already been unhealthy for a long stretch.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−1.00 &times; 10<sup>−3</sup> per day</b>, fitted over the 90-day window ending day 937. Extended at that rate, the fit crosses the 0.85 failure limit on day 990.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Onset day 900, declared day 907 — <b>7 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-warning" data-state="faulted" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1G</span>
-          <span class="pill warning"><span class="dot"></span>Warning</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">Degraded <span class="sub">&middot; onset day 400</span></span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 412 <span class="sub">&middot; 12-day latency</span></span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">50 <span class="pm">&plusmn; 2 d</span></span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy to day 400, degrading since; detected day 412; now day 442; projected to reach the failure limit at day 492.">
-          <div class="tk-top"><span class="tk-now-l" style="left:52.7%">now &middot; d442</span></div>
-          <div class="tk-wrap">
-            <div class="tk-bar">
-              <span class="tk-h" style="width:13.0%"></span>
-              <span class="tk-d" style="left:13.0%; width:39.7%"></span>
-              <span class="tk-p" style="left:52.7%; width:47.3%"></span>
-              <span class="tk-f"></span>
-            </div>
-            <div class="tk-mk">
-              <span class="tk-det" style="left:24.4%"></span>
-              <span class="tk-cur" style="left:52.7%"></span>
-            </div>
-          </div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">Long-running degradation. The clock has been sliding out of spec since early in the mission, so by the time it is flagged it has already been unhealthy for a long stretch.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−9.73 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 442. Extended at that rate, the fit crosses the 0.85 failure limit on day 492.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Onset day 400, declared day 412 — <b>12 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-warning" data-state="faulted" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1I</span>
-          <span class="pill warning"><span class="dot"></span>Warning</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">Slow drift <span class="sub">&middot; onset day 1750</span></span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 1765 <span class="sub">&middot; 15-day latency</span></span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">93 <span class="pm">&plusmn; 3 d</span></span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy to day 1750, degrading since; detected day 1765; now day 1795; projected to reach the failure limit at day 1888.">
-          <div class="tk-top"><span class="tk-now-l" style="left:41.4%">now &middot; d1795</span></div>
-          <div class="tk-wrap">
-            <div class="tk-bar">
-              <span class="tk-h" style="width:13.0%"></span>
-              <span class="tk-d" style="left:13.0%; width:28.4%"></span>
-              <span class="tk-p" style="left:41.4%; width:58.6%"></span>
-              <span class="tk-f"></span>
-            </div>
-            <div class="tk-mk">
-              <span class="tk-det" style="left:22.5%"></span>
-              <span class="tk-cur" style="left:41.4%"></span>
-            </div>
-          </div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">A gradual frequency drift that accumulates over months rather than appearing in a single step. The hardest of the four to catch early, because no one day looks wrong.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−7.54 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 1795. Extended at that rate, the fit crosses the 0.85 failure limit on day 1888.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Onset day 1750, declared day 1765 — <b>15 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-warning" data-state="faulted" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1A</span>
-          <span class="pill warning"><span class="dot"></span>Warning</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">Noise increase <span class="sub">&middot; onset day 2350</span></span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 2364 <span class="sub">&middot; 14-day latency</span></span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">151 <span class="pm">&plusmn; 6 d</span></span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy to day 2350, degrading since; detected day 2364; now day 2394; projected to reach the failure limit at day 2545.">
-          <div class="tk-top"><span class="tk-now-l" style="left:32.7%">now &middot; d2394</span></div>
-          <div class="tk-wrap">
-            <div class="tk-bar">
-              <span class="tk-h" style="width:13.0%"></span>
-              <span class="tk-d" style="left:13.0%; width:19.7%"></span>
-              <span class="tk-p" style="left:32.7%; width:67.3%"></span>
-              <span class="tk-f"></span>
-            </div>
-            <div class="tk-mk">
-              <span class="tk-det" style="left:19.3%"></span>
-              <span class="tk-cur" style="left:32.7%"></span>
-            </div>
-          </div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">Short-term stability collapses: the noise floor rises roughly fourfold while mean frequency stays put, so averages look fine and scatter does not.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−5.91 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 2394. Extended at that rate, the fit crosses the 0.85 failure limit on day 2545.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Onset day 2350, declared day 2364 — <b>14 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — IRNSS-1A lost all three of its atomic clocks on orbit in 2016, which is why it carries a failure profile here.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-warning" data-state="faulted" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1E</span>
-          <span class="pill warning"><span class="dot"></span>Warning</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">Sudden jump <span class="sub">&middot; onset day 2100</span></span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 2108 <span class="sub">&middot; 8-day latency</span></span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">208 <span class="pm">&plusmn; 8 d</span></span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy to day 2100, degrading since; detected day 2108; now day 2138; projected to reach the failure limit at day 2346.">
-          <div class="tk-top"><span class="tk-now-l" style="left:26.5%">now &middot; d2138</span></div>
-          <div class="tk-wrap">
-            <div class="tk-bar">
-              <span class="tk-h" style="width:13.0%"></span>
-              <span class="tk-d" style="left:13.0%; width:13.5%"></span>
-              <span class="tk-p" style="left:26.5%; width:73.5%"></span>
-              <span class="tk-f"></span>
-            </div>
-            <div class="tk-mk">
-              <span class="tk-det" style="left:15.9%"></span>
-              <span class="tk-cur" style="left:26.5%"></span>
-            </div>
-          </div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">An abrupt step in frequency offset. The clock re-settles and keeps running, but at a new and wrong rate.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−4.88 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 2138. Extended at that rate, the fit crosses the 0.85 failure limit on day 2346.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Onset day 2100, declared day 2108 — <b>8 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-nominal" data-state="healthy" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1B</span>
-          <span class="pill nominal"><span class="dot"></span>Nominal</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">No declining trend</span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
-          <div class="tk-top"></div>
-          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>+5.74 &times; 10<sup>−7</sup> per day</b> — flat within noise, and not negative, so there is no decline to project.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-nominal" data-state="healthy" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1C</span>
-          <span class="pill nominal"><span class="dot"></span>Nominal</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">Beyond horizon</span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
-          <div class="tk-top"></div>
-          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−1.43 &times; 10<sup>−6</sup> per day</b> — declining so slowly that the fit reaches 0.85 well past the 3,650-day horizon.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-nominal" data-state="healthy" data-clock="imported"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">IRNSS-1F</span>
-          <span class="pill nominal"><span class="dot"></span>Nominal</span>
-        </div>
-        <div class="sat-clock">Imported</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">No declining trend</span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
-          <div class="tk-top"></div>
-          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>+2.21 &times; 10<sup>−5</sup> per day</b> — flat within noise, and not negative, so there is no decline to project.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-nominal" data-state="healthy" data-clock="indigenous"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">NVS-01</span>
-          <span class="pill nominal"><span class="dot"></span>Nominal</span>
-        </div>
-        <div class="sat-clock">Indigenous</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">Beyond horizon</span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
-          <div class="tk-top"></div>
-          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−6.66 &times; 10<sup>−6</sup> per day</b> — declining so slowly that the fit reaches 0.85 well past the 3,650-day horizon.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Indigenous iRAFS, ISRO-built — the replacement line flown on the NVS series.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="sat st-nominal" data-state="healthy" data-clock="indigenous"
-           role="button" tabindex="0" aria-expanded="false">
-        <div class="sat-top">
-          <span class="sat-name">NVS-02</span>
-          <span class="pill nominal"><span class="dot"></span>Nominal</span>
-        </div>
-        <div class="sat-clock">Indigenous</div>
-        <div class="rows">
-          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
-          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
-          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">Beyond horizon</span></div>
-        </div>
-        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
-          <div class="tk-top"></div>
-          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
-        </div>
-        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
-        <div class="sat-detail">
-          <div class="sd-in">
-            <div class="sd-block">
-              <div class="sd-k">Fault profile</div>
-              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Fitted decline</div>
-              <div class="sd-v"><b>−3.35 &times; 10<sup>−5</sup> per day</b> — declining so slowly that the fit reaches 0.85 well past the 3,650-day horizon.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Why that latency</div>
-              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
-            </div>
-            <div class="sd-block">
-              <div class="sd-k">Clock provenance</div>
-              <div class="sd-v">Indigenous iRAFS, ISRO-built — the replacement line flown on the NVS series.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+  <!-- ==================== PROGNOSIS ==================== -->
+  <section id="screen-prognosis" class="screen" hidden>
+    <header class="masthead">
+      <div class="brand"><h1>NavIC Pulse</h1><span class="screen">Prognosis</span></div>
+      <p class="tagline" id="pr-lede"></p>
+    </header>
+    <div class="filters" id="pr-pills"></div>
+    <div class="panel reveal" id="pr-chart"></div>
+    <div class="grid2">
+      <div class="panel reveal" id="pr-table"></div>
+      <div class="panel reveal" id="pr-note"></div>
     </div>
+  </section>
 
-    <p class="grid-note">
-      Severity bands are set at the 60th percentile of flagged scores, so satellites of similar
-      health can fall on opposite sides of a band boundary. IRNSS-1D and IRNSS-1G differ by 3 days
-      of remaining life &mdash; within noise.
-    </p>
-  </div>
-</section>
-
-<!-- ==================== HEADLINE METRICS ==================== -->
-<section>
-  <div class="wrap">
-    <p class="eyebrow">Detector performance</p>
-    <h2>Every fault caught. No false alarms.</h2>
-    <p class="lede">
-      Autoencoder reconstruction error with CUSUM persistence, evaluated over 28,710
-      thirty-day windows across ten satellites.
-    </p>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="label">Precision</div>
-        <div class="value"><span data-count="1.0000" data-dec="4">1.0000</span></div>
-        <div class="note">6,944 true positives,<br>zero false positives</div>
-      </div>
-      <div class="stat">
-        <div class="label">Recall</div>
-        <div class="value"><span data-count="0.8425" data-dec="4">0.8425</span></div>
-        <div class="note">6,944 of 8,242<br>anomalous windows</div>
-      </div>
-      <div class="stat">
-        <div class="label">F1</div>
-        <div class="value"><span data-count="0.9145" data-dec="4">0.9145</span></div>
-        <div class="note">window level,<br>CUSUM detector</div>
-      </div>
-      <div class="stat">
-        <div class="label">ROC AUC</div>
-        <div class="value"><span data-count="0.9348" data-dec="4">0.9348</span></div>
-        <div class="note">ranking quality of the<br>raw anomaly score</div>
-      </div>
-      <div class="stat is-accent">
-        <div class="label">Faults caught</div>
-        <div class="value"><span data-count="5" data-dec="0">5</span><span class="den"> / 5</span></div>
-        <div class="note">all faulted satellites<br>detected within 15 days</div>
-      </div>
-      <div class="stat is-accent">
-        <div class="label">False alarms</div>
-        <div class="value">0</div>
-        <div class="note">across 20,468 healthy<br>windows · 5 healthy units</div>
-      </div>
+  <!-- ==================== PERFORMANCE ==================== -->
+  <section id="screen-performance" class="screen" hidden>
+    <header class="masthead">
+      <div class="brand"><h1>NavIC Pulse</h1><span class="screen">Performance</span></div>
+      <p class="tagline" id="pf-lede"></p>
+    </header>
+    <div class="grid2">
+      <div class="panel reveal" id="pf-roc"></div>
+      <div class="panel reveal" id="pf-sat"></div>
     </div>
-  </div>
-</section>
-
-<!-- ==================== FIGURES ==================== -->
-<section>
-  <div class="wrap">
-    <p class="eyebrow">Evidence</p>
-    <h2>What the model actually sees</h2>
-    <p class="lede">
-      Four figures generated directly from the pipeline output — detection, separation,
-      prognosis, and the raw telemetry underneath it all.
-    </p>
-
-    <div class="figs">
-
-      <figure>
-        <div class="plate"><img src="anomaly_timeline.png" alt="Anomaly score against day for IRNSS-1I, showing the threshold, the fault onset at day 1750 and the sustained detection at day 1765."></div>
-        <figcaption>
-          <b>Anomaly timeline — IRNSS-1I</b>
-          Reconstruction error climbs off the healthy floor at fault onset and stays above
-          threshold, giving a sustained detection <span class="hl">15 days after onset</span>.
-        </figcaption>
-      </figure>
-
-      <figure>
-        <div class="plate"><img src="score_histogram.png" alt="Log-scale histogram of anomaly scores for healthy versus anomalous windows, showing two near-disjoint distributions."></div>
-        <figcaption>
-          <b>Score separation</b>
-          Healthy and anomalous windows sit on opposite ends of a log axis —
-          <span class="hl">371× separation in mean score</span> (0.163 against 60.7), which is
-          why precision holds at 1.0000.
-        </figcaption>
-      </figure>
-
-      <figure>
-        <div class="plate"><img src="rul_projection.png" alt="RAFS signal level declining for IRNSS-1I with a fitted trend line projected to the 0.85 failure limit at 93 days."></div>
-        <figcaption>
-          <b>Remaining-life projection — IRNSS-1I</b>
-          The fitted signal-level decline reaches the 0.85 failure limit in
-          <span class="hl">93 ± 3 days</span>. The green plateau is the projection's honest
-          limit: the observed decline flattens near 0.91 and never crosses, so this answers
-          "if the current rate held", not "this clock will fail".
-        </figcaption>
-      </figure>
-
-      <figure>
-        <div class="plate"><img src="raw_check.png" alt="Six raw telemetry channels plotted side by side for healthy IRNSS-1C and drifting IRNSS-1I."></div>
-        <figcaption>
-          <b>Raw telemetry check</b>
-          Six channels, healthy IRNSS-1C against drifting IRNSS-1I. The RAFS signal level
-          breaks from its healthy band <span class="hl">at onset — roughly 170 days before
-          the frequency offset does</span>, which is why signal level drives the RUL fit.
-        </figcaption>
-      </figure>
-
-    </div>
-  </div>
-</section>
-
-<!-- ==================== HOW IT WORKS ==================== -->
-<section>
-  <div class="wrap">
-    <p class="eyebrow">Method</p>
-    <h2>How it works</h2>
-    <p class="lede">Five stages, from published specification to a number an operator can plan against.</p>
-
-    <div class="steps">
-      <div class="step">
-        <div class="n">01</div>
-        <h3>Synthetic telemetry</h3>
-        <p>Five channels over 2,900 days, generated from ISRO's published iRAFS specification and its four measured failure signatures.</p>
-      </div>
-      <div class="step">
-        <div class="n">02</div>
-        <h3>30-day windows</h3>
-        <p>Scaler fitted on healthy data only, then sliced into 28,710 overlapping thirty-day windows — 150 features each.</p>
-      </div>
-      <div class="step">
-        <div class="n">03</div>
-        <h3>Autoencoder</h3>
-        <p>A 150 → 64 → 12 → 64 → 150 MLP trained on healthy windows alone, so anything abnormal reconstructs badly.</p>
-      </div>
-      <div class="step">
-        <div class="n">04</div>
-        <h3>Detection</h3>
-        <p>Per-window reconstruction error against a 3σ threshold, confirmed by 60 consecutive alarm windows before a fault is declared.</p>
-      </div>
-      <div class="step">
-        <div class="n">05</div>
-        <h3>Prognosis</h3>
-        <p>A 90-day trend on RAFS signal level, extrapolated to the 0.85 failure limit with a fit-derived error bar.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== HONEST LIMITS ==================== -->
-<section>
-  <div class="wrap">
-    <p class="eyebrow">Caveats</p>
-    <h2>Honest limits</h2>
-    <div class="limits">
-      <ul>
-        <li><b>The dataset is synthetic.</b> Failure magnitudes come from the published iRAFS record; everything else is modelled. Real IRNSS clock data, identified via IGS MGEX, is the validation path.</li>
-        <li><b>RUL assumes the current decline rate continues.</b> The error bars are model-fit precision, not accuracy — the generated decline plateaus near 0.91 and never reaches the failure limit.</li>
-        <li><b>The persistence constant is calibrated on five healthy units.</b> CUSUM_PERSISTENCE = 60 is where healthy units go quiet on <em>this</em> dataset — demo-grade calibration, not an operationally justified value.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== FOOTER ==================== -->
-<footer>
-  <div class="wrap">
-    <span>NavIC Pulse · Smart India Hackathon · PS 26209</span>
-    <a href="https://github.com/Akshat-999-Singh/navic-pulse">github.com/Akshat-999-Singh/navic-pulse</a>
-  </div>
-</footer>
-
-<!-- ==================== LIGHTBOX ==================== -->
-<div class="lb" hidden role="dialog" aria-modal="true" aria-label="Figure viewer">
-  <button class="lb-x" type="button">Close &middot; Esc</button>
-  <img alt="">
-  <p class="lb-cap"></p>
+    <div class="panel reveal" id="pf-detectors"></div>
+    <div class="panel reveal" id="pf-head2head"></div>
+    <div class="panel reveal" id="pf-persistence"></div>
+  </section>
 </div>
 
+<div id="tip" role="status" aria-live="polite"></div>
+
+<div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-cap" hidden>
+  <div class="lb-plate">
+    <div class="lb-cap" id="lb-cap"></div>
+    <p class="lb-sub" id="lb-sub"></p>
+    <div class="lb-body" id="lb-body"></div>
+  </div>
+  <button class="lb-close" id="lb-close" type="button" aria-label="Close">&times;</button>
+</div>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="tabbar-in" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-screen="constellation">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4.6"/><ellipse cx="12" cy="12" rx="10" ry="4.6" transform="rotate(60 12 12)"/></svg>
+      Constellation
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-screen="evidence">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15v-4M12 15V8M16 15v-6"/></svg>
+      Evidence
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-screen="prognosis">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M6.5 10.5l4 3 3-5 4 4"/></svg>
+      Prognosis
+    </button>
+    <button class="tab" role="tab" aria-selected="false" data-screen="performance">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20a8 8 0 1 1 8-8"/><path d="M12 12l4.5-3.5"/><circle cx="12" cy="12" r="1.3"/></svg>
+      Performance
+    </button>
+  </div>
+</nav>
+
+<script src="data.js"></script>
 <script>
 (function () {
   "use strict";
 
-  var reduced = window.matchMedia &&
-                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var canAnimate = !reduced && typeof Element.prototype.animate === "function";
-  var slice = function (n) { return Array.prototype.slice.call(n); };
+  var D = window.NAVIC_PULSE;
+  if (!D) { document.getElementById("cards").textContent = "data.js did not load."; return; }
 
-  /* ---------------- expandable satellite cards ---------------- */
-  slice(document.querySelectorAll(".sat")).forEach(function (card) {
-    function toggle() {
-      var open = card.classList.toggle("open");
-      card.setAttribute("aria-expanded", open ? "true" : "false");
+  var META = D.meta, SATS = D.constellation, PROG = D.prognosis, CAL = META.calibration, C = META.counts;
+
+  /* ---------------- formatting ---------------- */
+
+  function fx(v, d) { return v === null || v === undefined ? "—" : Number(v).toFixed(d); }
+  function int(v) { return v === null || v === undefined ? "—" : Math.round(v).toLocaleString("en-US"); }
+
+  var SUP = { "-": "⁻", 0: "⁰", 1: "¹", 2: "²", 3: "³",
+              4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+  function sup(s) { return String(s).split("").map(function (c) { return SUP[c] || c; }).join(""); }
+
+  function sci(v) {
+    if (v === null || v === undefined) return "—";
+    var p = Number(v).toExponential(3).split("e");
+    return p[0] + "×10" + sup(String(p[1]).replace("+", ""));
+  }
+
+  function sig(v, d) {
+    if (v === null || v === undefined) return "—";
+    var s = Number(v).toPrecision(d);
+    if (s.indexOf("e") < 0 && s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s;
+  }
+
+  function chanFmt(v, f) {
+    if (v === null || v === undefined) return "—";
+    if (f === "sci") return sci(v);
+    if (f === "fixed1") return fx(v, 1);
+    if (f === "fixed2") return fx(v, 2);
+    if (f === "fixed4") return fx(v, 4);
+    return String(v);
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  function sevClass(s) { return "pill-" + String(s).toLowerCase(); }
+
+  /* Palette, shared by the cards and every chart. */
+  var C_INK = "#2A2622", C_INK2 = "#6A6058", C_INK3 = "#948A7E", C_RULE = "#E6DFD4",
+      C_SAGE = "#2C7A63", C_AMBER = "#BE8722", C_AMBERINK = "#8A5F13",
+      C_BRICK = "#A32A1C", C_ACCENT = "#A85A38";
+
+  function sevColor(s) {
+    return s === "Critical" ? C_BRICK : s === "Warning" ? C_AMBER : C_SAGE;
+  }
+
+  var REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  var HAS_IO = typeof IntersectionObserver === "function";
+
+  /* The projected crossing: the reference day plus the remaining life. */
+  function failDay(s) { return s.rul_days === null ? null : s.reference_day + s.rul_days; }
+
+  /* Does the observed signal level ever actually reach the failure limit?
+     On every faulted clock here the decline flattens above it, which is the
+     limitation the constant-rate projection cannot see. Checked, not assumed. */
+  function reachesLimit(s) {
+    return Math.min.apply(null, s.signal_sparkline.value) <= PROG.failure_limit;
+  }
+
+  /* One horizontal scale for every strip, so the cards are comparable. */
+  var AXIS_MAX = META.n_days;
+  SATS.forEach(function (s) { var f = failDay(s); if (f !== null && f > AXIS_MAX) AXIS_MAX = f; });
+  function pc(day) { return (day / AXIS_MAX * 100).toFixed(3) + "%"; }
+
+  var byId = {};
+  SATS.forEach(function (s) { byId[s.id] = s; });
+
+  /* ---------------- header ---------------- */
+
+  document.getElementById("tagline").textContent =
+    "Predictive health monitoring for the NavIC rubidium clocks. " + C.satellites +
+    " satellites, " + META.years + " years, " + META.cadence + ".";
+
+  document.getElementById("factbar").innerHTML = [
+    [C.satellites, "satellites"],
+    [C.faulted_satellites, "faulted"],
+    [C.healthy_satellites, "healthy"],
+    [META.n_days, "days on record"],
+    [C.windows, META.window_days + "-day windows"]
+  ].map(function (f) {
+    return '<div class="fact"><span class="fact-v num" data-count="' + f[0] + '" data-fmt="int">' +
+           int(f[0]) + '</span><span class="fact-k">' + esc(f[1]) + "</span></div>";
+  }).join("");
+
+  document.getElementById("provenance").textContent = META.provenance;
+
+  /* ---------------- explainer ---------------- */
+
+  document.getElementById("ex-status").textContent =
+    "The autoencoder reconstruction error over a " + META.window_days + "-day window, against a fixed threshold of " +
+    fx(CAL.threshold, 3) + " — the healthy training mean plus " + fx(CAL.k_sigma, 0) +
+    " standard deviations. A fault is declared only after " + CAL.cusum_persistence_windows +
+    " consecutive flagged windows, so a single noisy window is never a detection.";
+  document.getElementById("ex-status-src").textContent = CAL.note;
+
+  document.getElementById("ex-rul").textContent =
+    "Ordinary least squares on the RAFS signal level over the " + PROG.trend_window_days +
+    " days ending on the reference day, extrapolated at a constant rate to the " + PROG.failure_limit +
+    " failure limit. The crossing standard error is propagated by the delta method.";
+  document.getElementById("ex-rul-src").textContent =
+    "The reference day is the detection day plus " + PROG.prognosis_lag_days +
+    " days — the point at which the call is made. On a clock that was never flagged it is simply the last day on record.";
+
+  document.getElementById("ex-indep").textContent =
+    "The autoencoder residual drives detection, not this projection. A clock can be flagged with no declining trend to extrapolate, " +
+    "and a declining trend can sit on a clock that was never flagged. Both cases are below.";
+
+  /* ---------------- cohort filter ---------------- */
+
+  var FILTERS = [
+    { key: "all",        label: "All",        count: C.satellites,         test: function ()  { return true; } },
+    { key: "faulted",    label: "Faulted",    count: C.faulted_satellites, test: function (s) { return s.is_faulted; } },
+    { key: "healthy",    label: "Healthy",    count: C.healthy_satellites, test: function (s) { return !s.is_faulted; } },
+    { key: "imported",   label: "Imported",   count: C.imported,           test: function (s) { return s.clock_type === "imported"; } },
+    { key: "indigenous", label: "Indigenous", count: C.indigenous,         test: function (s) { return s.clock_type === "indigenous"; } }
+  ];
+  var active = "all";
+
+  var filterEl = document.getElementById("filters");
+  filterEl.innerHTML = FILTERS.map(function (f) {
+    return '<button class="fpill" type="button" data-f="' + f.key + '" aria-pressed="' +
+           (f.key === active) + '">' + esc(f.label) + '<span class="c">' + f.count + "</span></button>";
+  }).join("");
+
+  filterEl.addEventListener("click", function (e) {
+    var b = e.target.closest(".fpill");
+    if (!b) return;
+    active = b.dataset.f;
+    Array.prototype.forEach.call(filterEl.querySelectorAll(".fpill"), function (p) {
+      p.setAttribute("aria-pressed", String(p.dataset.f === active));
+    });
+    applyFilter(true);
+  });
+
+  /* FLIP: measure, swap, invert, play. Cards leaving fade first so the
+     survivors are not sliding past something that is still on screen. */
+  function applyFilter(animate) {
+    var t = FILTERS.filter(function (f) { return f.key === active; })[0].test;
+    var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+    var wants = function (c) { return t(byId[c.dataset.id]); };
+
+    if (!animate || REDUCED) {
+      cards.forEach(function (c) { c.hidden = !wants(c); });
+      return;
     }
-    card.addEventListener("click", toggle);
-    card.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
-    });
-  });
 
-  /* ---------------- filter pills ----------------
-     Leaving cards fade out first, then the survivors FLIP into their new
-     slots and any newcomers fade in. */
-  var fleet = document.querySelector(".fleet");
-  var buttons = slice(document.querySelectorAll(".fbtn"));
-  var cards = fleet ? slice(fleet.querySelectorAll(".sat")) : [];
+    var leaving = cards.filter(function (c) { return !c.hidden && !wants(c); });
+    var firstTop = {};
+    cards.forEach(function (c, i) { if (!c.hidden) firstTop[i] = c.getBoundingClientRect().top; });
 
-  function matches(card, key) {
-    return key === "all" ||
-           card.getAttribute("data-state") === key ||
-           card.getAttribute("data-clock") === key;
-  }
+    function commit() {
+      leaving.forEach(function (c) { c.classList.remove("is-leaving"); });
+      cards.forEach(function (c) { c.hidden = !wants(c); });
 
-  function commit(key, before) {
-    cards.forEach(function (c) {
-      if (matches(c, key)) { c.classList.remove("is-hidden"); }
-      else { c.classList.add("is-hidden"); }
-    });
-    if (!canAnimate) { return; }
-    cards.forEach(function (c) {
-      if (c.classList.contains("is-hidden")) { return; }
-      var first = before.get(c);
-      var last = c.getBoundingClientRect();
-      if (!first) {
-        c.animate([{ opacity: 0, transform: "scale(.97)" },
-                   { opacity: 1, transform: "none" }],
-                  { duration: 240, easing: "ease" });
-        return;
-      }
-      var dx = first.left - last.left;
-      var dy = first.top - last.top;
-      if (!dx && !dy) { return; }
-      c.animate([{ transform: "translate(" + dx + "px," + dy + "px)" },
-                 { transform: "none" }],
-                { duration: 300, easing: "cubic-bezier(.2,.7,.3,1)" });
-    });
-  }
-
-  function setFilter(key) {
-    buttons.forEach(function (b) {
-      b.setAttribute("aria-pressed",
-        b.getAttribute("data-filter") === key ? "true" : "false");
-    });
-    var before = new Map();
-    cards.forEach(function (c) {
-      if (!c.classList.contains("is-hidden")) {
-        before.set(c, c.getBoundingClientRect());
-      }
-    });
-    var leaving = cards.filter(function (c) {
-      return !c.classList.contains("is-hidden") && !matches(c, key);
-    });
-    if (!canAnimate || !leaving.length) { commit(key, before); return; }
-    var done = 0;
-    leaving.forEach(function (c) {
-      var a = c.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.97)" }],
-                        { duration: 150, easing: "ease" });
-      a.onfinish = function () {
-        if (++done === leaving.length) { commit(key, before); }
-      };
-    });
-  }
-
-  buttons.forEach(function (b) {
-    b.addEventListener("click", function () {
-      setFilter(b.getAttribute("data-filter"));
-    });
-  });
-
-  /* ---------------- count-up on the metric values ---------------- */
-  var counters = slice(document.querySelectorAll("[data-count]"));
-
-  function fmt(el, v) {
-    return v.toFixed(parseInt(el.getAttribute("data-dec") || "0", 10));
-  }
-
-  function runCount(el) {
-    var target = parseFloat(el.getAttribute("data-count"));
-    if (reduced) { el.textContent = fmt(el, target); return; }
-    var start = null, dur = 800;
-    el.classList.add("counting");
-    requestAnimationFrame(function step(ts) {
-      if (start === null) { start = ts; }
-      var p = Math.min((ts - start) / dur, 1);
-      el.textContent = fmt(el, target * (1 - Math.pow(1 - p, 3)));
-      if (p < 1) { requestAnimationFrame(step); }
-      else { el.textContent = fmt(el, target); el.classList.remove("counting"); }
-    });
-  }
-
-  /* ---------------- scroll reveal + count trigger ----------------
-     .reveal is added by script, so with JS off nothing is ever hidden. */
-  var sections = slice(document.querySelectorAll("section"));
-
-  if (!reduced && window.IntersectionObserver) {
-    var io = new IntersectionObserver(function (entries, obs) {
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) { return; }
-        obs.unobserve(en.target);
-        if (en.target.hasAttribute("data-count")) { runCount(en.target); }
-        else { en.target.classList.add("revealed"); }
+      cards.forEach(function (c, i) {
+        if (c.hidden) return;
+        if (firstTop[i] === undefined) {
+          c.classList.add("is-entering");
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { c.classList.remove("is-entering"); });
+          });
+          return;
+        }
+        var dy = firstTop[i] - c.getBoundingClientRect().top;
+        if (Math.abs(dy) < 0.5) return;
+        c.style.transition = "none";
+        c.style.transform = "translateY(" + dy + "px)";
+        requestAnimationFrame(function () {
+          c.style.transition = "";
+          c.style.transform = "";
+        });
       });
-    }, { threshold: 0, rootMargin: "0px 0px -60px 0px" });
+    }
 
-    sections.forEach(function (s) { s.classList.add("reveal"); io.observe(s); });
-    counters.forEach(function (c) {
-      c.textContent = fmt(c, 0);   /* park at zero before it scrolls into view */
-      io.observe(c);
+    if (leaving.length) {
+      leaving.forEach(function (c) { c.classList.add("is-leaving"); });
+      setTimeout(commit, 170);
+    } else {
+      commit();
+    }
+  }
+
+  /* ---------------- entry animation ---------------- */
+
+  var revealObs = HAS_IO && new IntersectionObserver(function (ents) {
+    ents.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      revealObs.unobserve(en.target);
+      var el = en.target;
+      el.classList.remove("reveal");
+      if (REDUCED) return;
+      el.classList.add("rise");
+      el.addEventListener("animationend", function done() {
+        el.classList.remove("rise");
+        el.style.animationDelay = "";
+        el.removeEventListener("animationend", done);
+      });
+    });
+  }, { threshold: 0.06, rootMargin: "0px 0px -40px 0px" });
+
+  function revealAll(root) {
+    Array.prototype.forEach.call(root.querySelectorAll(".reveal"), function (el, i) {
+      if (!revealObs) { el.classList.remove("reveal"); return; }
+      el.style.animationDelay = Math.min(i, 6) * 35 + "ms";
+      revealObs.observe(el);
     });
   }
 
-  /* ---------------- figure lightbox ---------------- */
-  var lb = document.querySelector(".lb");
-  var lbImg = lb.querySelector("img");
-  var lbCap = lb.querySelector(".lb-cap");
-  var lbX = lb.querySelector(".lb-x");
-  var lastFocus = null;
+  /* ---------------- count-up readouts ---------------- */
 
-  function openLb(img) {
-    lastFocus = img;
-    lbImg.setAttribute("src", img.getAttribute("src"));
-    lbImg.setAttribute("alt", img.getAttribute("alt") || "");
-    var fig = img.parentNode.parentNode;
-    var cap = fig ? fig.querySelector("figcaption b") : null;
-    lbCap.textContent = cap ? cap.textContent : "";
-    lb.hidden = false;
+  function fmtCount(v, fmt) {
+    if (fmt === "int") return Math.round(v).toLocaleString("en-US");
+    return Number(v).toFixed(parseInt(fmt, 10) || 0);
+  }
+
+  function countUp(el) {
+    var to = parseFloat(el.dataset.count), fmt = el.dataset.fmt || "int";
+    if (isNaN(to)) return;
+    if (REDUCED) { el.textContent = fmtCount(to, fmt); return; }
+    var t0 = null, dur = 750;
+    requestAnimationFrame(function step(ts) {
+      if (t0 === null) t0 = ts;
+      var p = Math.min((ts - t0) / dur, 1);
+      el.textContent = fmtCount(to * (1 - Math.pow(1 - p, 3)), fmt);
+      if (p < 1) requestAnimationFrame(step); else el.textContent = fmtCount(to, fmt);
+    });
+  }
+
+  var countObs = HAS_IO && new IntersectionObserver(function (ents) {
+    ents.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      countObs.unobserve(en.target);
+      countUp(en.target);
+    });
+  }, { threshold: 0.5 });
+
+  function countAll(root) {
+    Array.prototype.forEach.call(root.querySelectorAll("[data-count]"), function (el) {
+      var fmt = el.dataset.fmt || "int";
+      if (!countObs) { el.textContent = fmtCount(parseFloat(el.dataset.count), fmt); return; }
+      el.textContent = fmtCount(0, fmt);
+      countObs.observe(el);
+    });
+  }
+
+  function animateIn(root) { revealAll(root); countAll(root); }
+
+  /* ---------------- lifetime strip ---------------- */
+
+  function strip(s) {
+    var h = [], fd = failDay(s);
+
+    h.push('<div class="strip">');
+    h.push('<div class="rail">');
+
+    if (s.is_faulted) {
+      h.push('<div class="seg seg-healthy" data-tip="Healthy|day 0 – ' + s.anomaly_start_day +
+             '" style="left:0;width:' + pc(s.anomaly_start_day) + '"></div>');
+      h.push('<div class="seg seg-observed" data-tip="Observed degradation|day ' + s.anomaly_start_day +
+             " – " + s.reference_day + ", " + (s.reference_day - s.anomaly_start_day) +
+             ' days" style="left:' + pc(s.anomaly_start_day) + ";width:" +
+             pc(s.reference_day - s.anomaly_start_day) + '"></div>');
+      if (fd !== null) {
+        h.push('<div class="seg seg-proj" data-tip="Projected|day ' + s.reference_day + " – " + fd +
+               ", " + s.rul_days + ' days remaining" style="left:' + pc(s.reference_day) +
+               ";width:" + pc(fd - s.reference_day) + '"></div>');
+      }
+    } else {
+      h.push('<div class="seg seg-healthy" data-tip="Healthy|day 0 – ' + s.last_day +
+             ', no fault declared" style="left:0;width:' + pc(s.last_day) + '"></div>');
+    }
+    h.push("</div>");
+
+    if (s.rul_ci95) {
+      var lo = s.reference_day + s.rul_ci95[0], hi = s.reference_day + s.rul_ci95[1];
+      h.push('<div class="ci" data-tip="95% interval on the crossing|day ' + lo + " – " + hi +
+             ", ±" + fx(s.rul_se_days, 1) + ' d standard error" style="left:' + pc(lo) +
+             ";width:" + pc(hi - lo) + '"></div>');
+    }
+    if (s.detection_day !== null) {
+      h.push('<div class="tick-detect" data-tip="Detection|day ' + s.detection_day + ", " +
+             s.detection_latency_days + ' days after onset" style="left:' + pc(s.detection_day) + '"></div>');
+    }
+    h.push('<div class="mark-today" data-tip="Today|day ' + s.reference_day +
+           (s.is_faulted ? ", " + PROG.prognosis_lag_days + " days after detection" : ", the last day on record") +
+           '" style="left:' + pc(s.reference_day) + '"></div>');
+    if (fd !== null) {
+      h.push('<div class="mark-limit" data-tip="Failure limit|day ' + fd + ", signal level " +
+             PROG.failure_limit + '" style="left:' + pc(fd) + '"></div>');
+    }
+    h.push("</div>");
+    h.push('<div class="axis"><span class="num">day 0</span><span class="num">day ' + AXIS_MAX + "</span></div>");
+
+    return '<div class="stripwrap">' + h.join("") + "</div>";
+  }
+
+  /* ---------------- signal-level sparkline ---------------- */
+
+  var SP = { w: 620, h: 136, l: 42, r: 12, t: 12, b: 22, ymin: 0.84, ymax: 1.02 };
+  function spx(day) { return SP.l + day / AXIS_MAX * (SP.w - SP.l - SP.r); }
+  function spy(v) { return SP.t + (SP.ymax - v) / (SP.ymax - SP.ymin) * (SP.h - SP.t - SP.b); }
+
+  function vline(x, color, w, dash) {
+    return '<line x1="' + x.toFixed(1) + '" x2="' + x.toFixed(1) + '" y1="' + SP.t + '" y2="' + (SP.h - SP.b) +
+           '" stroke="' + color + '" stroke-width="' + w + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : "") +
+           ' vector-effect="non-scaling-stroke"/>';
+  }
+  function hline(v, color, w, dash) {
+    return '<line x1="' + SP.l + '" x2="' + (SP.w - SP.r) + '" y1="' + spy(v).toFixed(1) + '" y2="' + spy(v).toFixed(1) +
+           '" stroke="' + color + '" stroke-width="' + w + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : "") +
+           ' vector-effect="non-scaling-stroke"/>';
+  }
+  function ylabel(v, text, color) {
+    return '<text x="' + (SP.l - 7) + '" y="' + (spy(v) + 3.5).toFixed(1) +
+           '" text-anchor="end" font-size="10" fill="' + color + '" font-family="ui-monospace,monospace">' + text + "</text>";
+  }
+
+  function sparkline(s) {
+    var d = s.signal_sparkline, g = [];
+
+    g.push('<svg class="spark" viewBox="0 0 ' + SP.w + " " + SP.h +
+           '" role="img" tabindex="0" aria-label="RAFS signal level for ' + esc(s.id) + ' across the whole record">');
+
+    g.push(hline(1, "#E6DFD4", 1));
+    g.push(ylabel(1, "1.00", "#948A7E"));
+    g.push(hline(PROG.failure_limit, "#A32A1C", 1.5, "5 4"));
+    g.push(ylabel(PROG.failure_limit, String(PROG.failure_limit), "#A32A1C"));
+
+    if (s.anomaly_start_day !== null) g.push(vline(spx(s.anomaly_start_day), "#BE8722", 1, "3 3"));
+    if (s.detection_day !== null)     g.push(vline(spx(s.detection_day), "#8A5F13", 1.5));
+    g.push(vline(spx(s.reference_day), "#2A2622", 1.5));
+
+    var pts = d.day.map(function (day, i) {
+      return spx(day).toFixed(1) + "," + spy(d.value[i]).toFixed(1);
+    }).join(" ");
+    g.push('<polyline points="' + pts + '" fill="none" stroke="#2A2622" stroke-width="1.6" ' +
+           'stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>');
+
+    g.push('<line x1="' + SP.l + '" x2="' + (SP.w - SP.r) + '" y1="' + (SP.h - SP.b) + '" y2="' + (SP.h - SP.b) +
+           '" stroke="#E6DFD4" stroke-width="1" vector-effect="non-scaling-stroke"/>');
+    g.push('<text x="' + SP.l + '" y="' + (SP.h - 6) +
+           '" font-size="10" fill="#948A7E" font-family="ui-monospace,monospace">day 0</text>');
+    g.push('<text x="' + (SP.w - SP.r) + '" y="' + (SP.h - 6) +
+           '" text-anchor="end" font-size="10" fill="#948A7E" font-family="ui-monospace,monospace">day ' + AXIS_MAX + "</text>");
+    g.push("</svg>");
+
+    return g.join("");
+  }
+
+  /* ---------------- expanded detail ---------------- */
+
+  function kv(rows) {
+    return '<dl class="kv">' + rows.filter(Boolean).map(function (r) {
+      return "<dt>" + r[0] + "</dt><dd" + (r[2] ? ' class="txt"' : "") + ">" + r[1] + "</dd>";
+    }).join("") + "</dl>";
+  }
+
+  function detail(s) {
+    var h = [], fd = failDay(s);
+    var moved = s.severity_at_reference !== s.severity_at_last_day;
+
+    h.push('<div class="dsec"><h4>Severity</h4><div class="sevrow">');
+    h.push('<div class="sevbox"><div class="lbl">At the reference day</div><div class="day">day ' + s.reference_day +
+           '</div><span class="pill ' + sevClass(s.severity_at_reference) + '">' + esc(s.severity_at_reference) + "</span></div>");
+    h.push('<div class="sevbox"><div class="lbl">At the last day on record</div><div class="day">day ' + s.last_day +
+           '</div><span class="pill ' + sevClass(s.severity_at_last_day) + '">' + esc(s.severity_at_last_day) + "</span></div>");
+    h.push("</div>");
+    h.push('<p class="dnote">' + (s.is_faulted
+      ? "The pill on the card reports the reference day — " + PROG.prognosis_lag_days +
+        " days after detection, the moment the call was made. The last-day figure is where the same clock had got to " +
+        (s.last_day - s.reference_day) + " days later with no intervention" +
+        (moved ? ", having crossed from " + s.severity_at_reference + " into " + s.severity_at_last_day + "."
+               : ". It held at " + s.severity_at_last_day + " while the anomaly score went on climbing.")
+      : "This clock was never flagged, so its reference day is the last day on record and the two readings coincide.") + "</p>");
+    h.push("</div>");
+
+    h.push('<div class="dsec"><h4>Anomaly score</h4>');
+    h.push(kv([
+      ["At the reference day", '<span class="num">' + sig(s.score_at_reference, 4) + "</span>"],
+      ["At the last day", '<span class="num">' + sig(s.score_at_last_day, 4) + "</span>"],
+      ["Detection threshold", '<span class="num">' + fx(CAL.threshold, 5) + "</span>"],
+      ["Critical above", '<span class="num">' + fx(CAL.critical, 2) + "</span>"]
+    ]));
+    h.push("</div>");
+
+    if (s.is_faulted) {
+      h.push('<div class="dsec"><h4>Detection</h4>');
+      h.push(kv([
+        ["Fault profile", esc(s.profile_label), true],
+        ["Onset", '<span class="num">day ' + s.anomaly_start_day + "</span>"],
+        ["Declared", '<span class="num">day ' + s.detection_day + "</span>"],
+        ["Latency", '<span class="num">' + s.detection_latency_days + " days</span>"],
+        ["Reference day", '<span class="num">day ' + s.reference_day + "</span>"]
+      ]));
+      h.push("</div>");
+    }
+
+    h.push('<div class="dsec"><h4>Projected at current decline rate</h4>');
+    h.push(kv([
+      s.rul_days === null ? ["Projection", esc(s.rul_status), true] : null,
+      s.rul_days !== null ? ["Days remaining", '<span class="num">' + s.rul_days + " days</span>"] : null,
+      s.rul_ci95 ? ["95% interval", '<span class="num">' + s.rul_ci95[0] + " – " + s.rul_ci95[1] + " days</span>"] : null,
+      s.rul_se_days !== null ? ["Standard error", '<span class="num">±' + fx(s.rul_se_days, 1) + " days</span>"] : null,
+      fd !== null ? ["Projected crossing", '<span class="num">day ' + fd + "</span>"] : null,
+      ["Signal level at reference", '<span class="num">' + fx(s.signal_level_at_reference, 5) + "</span>"],
+      ["Trend", '<span class="num">' + sci(s.signal_slope_per_day) + " / day</span>"],
+      ["Failure limit", '<span class="num">' + PROG.failure_limit + "</span>"],
+      ["Fit window", '<span class="num">' + PROG.trend_window_days + " days</span>"]
+    ]));
+    h.push("</div>");
+
+    var twoCol = s.reference_day !== s.last_day;
+    h.push('<div class="dsec"><h4>Channels</h4><table class="chan"><thead><tr><th>Channel</th>' +
+           "<th>Reference day</th>" + (twoCol ? "<th>Last day</th>" : "") + "</tr></thead><tbody>");
+    META.channels.forEach(function (ch) {
+      var u = ch.unit ? '<span class="u">' + esc(ch.unit) + "</span>" : "";
+      h.push("<tr><td>" + esc(ch.label) + "</td>" +
+             "<td>" + chanFmt(s.channels_at_reference[ch.key], ch.format) + u + "</td>" +
+             (twoCol ? "<td>" + chanFmt(s.channels_at_last_day[ch.key], ch.format) + u + "</td>" : "") + "</tr>");
+    });
+    h.push("</tbody></table></div>");
+
+    h.push('<div class="dsec"><h4>RAFS signal level across the record</h4>');
+    h.push(sparkline(s));
+    h.push('<p class="dnote">The projection extrapolates the ' + PROG.trend_window_days +
+           "-day trend at a constant rate; this trace is what the channel actually did over all " +
+           META.n_days + " days. The dashed red line is the " + PROG.failure_limit + " failure limit" +
+           (s.is_faulted ? ", the vertical marks are onset, detection and the reference day. " : ". ") +
+           (s.rul_days !== null && !reachesLimit(s)
+             ? "The decline flattens at " + fx(Math.min.apply(null, s.signal_sparkline.value), 4) +
+               " and never reaches the limit within the record, so the projected crossing on day " +
+               failDay(s) + " is not borne out by the trace."
+             : "") + "</p>");
+    h.push("</div>");
+
+    return '<div class="detail" hidden>' + h.join("") + "</div>";
+  }
+
+  /* ---------------- cards ---------------- */
+
+  /* Shortest remaining life first, then the clocks with nothing to project. */
+  var ordered = SATS.slice().sort(function (a, b) {
+    if (a.is_faulted !== b.is_faulted) return a.is_faulted ? -1 : 1;
+    if (a.rul_days !== null && b.rul_days !== null) return a.rul_days - b.rul_days;
+    return a.id.localeCompare(b.id);
+  });
+
+  function projection(s) {
+    var h = ['<div class="proj"><div class="proj-row">',
+             '<span class="proj-lbl">Projected at current decline rate</span>'];
+
+    if (s.rul_days !== null) {
+      h.push('<span class="proj-val"><span class="v" data-count="' + s.rul_days + '" data-fmt="int">' +
+             s.rul_days + '</span><span class="unit">days</span>' +
+             (s.rul_ci95 ? '<span class="proj-ci">95% CI ' + s.rul_ci95[0] + "–" + s.rul_ci95[1] + " days</span>" : "") +
+             "</span>");
+    } else {
+      h.push('<span class="proj-val proj-none">' + esc(s.rul_status) + "</span>");
+    }
+    h.push("</div>");
+
+    if (s.rul_days !== null && !reachesLimit(s)) {
+      h.push('<p class="proj-caveat">The observed decline flattens before this limit — see Prognosis.</p>');
+    }
+    return h.join("") + "</div>";
+  }
+
+  document.getElementById("cards").innerHTML = ordered.map(function (s) {
+    return '<article class="card reveal" data-id="' + esc(s.id) +
+      '" style="--card-accent:' + sevColor(s.severity_at_reference) + '">' +
+      '<button class="card-head" type="button" aria-expanded="false">' +
+        '<span class="ch-main">' +
+          '<span class="ch-id">' + esc(s.id) + '<span class="chev"></span></span>' +
+          '<span class="ch-sub">' + esc(s.clock_type_label) + " · " + esc(s.profile_label) + "</span>" +
+        "</span>" +
+        '<span class="ch-right">' +
+          '<span class="pill ' + sevClass(s.severity_at_reference) + '">' + esc(s.severity_at_reference) + "</span>" +
+        "</span>" +
+      "</button>" +
+      projection(s) +
+      strip(s) +
+      detail(s) +
+    "</article>";
+  }).join("");
+
+  document.getElementById("cards").addEventListener("click", function (e) {
+    var btn = e.target.closest(".card-head");
+    if (!btn) return;
+    var card = btn.closest(".card");
+    var open = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!open));
+    card.classList.toggle("is-open", !open);
+    card.querySelector(".detail").hidden = open;
+  });
+
+  /* ---------------- hover tooltip ---------------- */
+
+  var tip = document.getElementById("tip");
+  function hideTip() { tip.style.opacity = "0"; }
+
+  document.addEventListener("mousemove", function (e) {
+    var el = e.target && e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (!el) { hideTip(); return; }
+    var p = el.dataset.tip.split("|");
+    tip.innerHTML = '<span class="t">' + esc(p[0]) + "</span>" +
+                    (p[1] ? '<br><span class="v">' + esc(p[1]) + "</span>" : "");
+    tip.style.opacity = "1";
+    var r = tip.getBoundingClientRect();
+    var left = Math.min(Math.max(8, e.clientX - r.width / 2), window.innerWidth - r.width - 8);
+    var top = e.clientY - r.height - 14;
+    if (top < 8) top = e.clientY + 20;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  });
+  document.addEventListener("scroll", hideTip, true);
+  window.addEventListener("blur", hideTip);
+
+  /* ================= chart toolkit =================
+     Small SVG primitives shared by the three analysis tabs. Everything is a
+     plain string; nothing scales strokes, so 1px stays 1px at any width. */
+
+  function f1(v) { return Number(v).toFixed(1); }
+
+  function LN(x1, y1, x2, y2, c, w, dash) {
+    return '<line x1="' + f1(x1) + '" y1="' + f1(y1) + '" x2="' + f1(x2) + '" y2="' + f1(y2) +
+           '" stroke="' + c + '" stroke-width="' + (w || 1) + '"' +
+           (dash ? ' stroke-dasharray="' + dash + '"' : "") + ' vector-effect="non-scaling-stroke"/>';
+  }
+  function TX(x, y, s, o) {
+    o = o || {};
+    return '<text x="' + f1(x) + '" y="' + f1(y) + '" font-size="' + (o.size || 10) +
+           '" fill="' + (o.fill || C_INK3) + '"' +
+           (o.anchor ? ' text-anchor="' + o.anchor + '"' : "") +
+           (o.weight ? ' font-weight="' + o.weight + '"' : "") +
+           (o.mono ? ' font-family="ui-monospace,monospace"' : "") + ">" + s + "</text>";
+  }
+  function PLY(pts, c, w, dash) {
+    return '<polyline points="' + pts + '" fill="none" stroke="' + c + '" stroke-width="' + w + '"' +
+           (dash ? ' stroke-dasharray="' + dash + '"' : "") +
+           ' stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+  }
+  function RC(x, y, w, h, fill, extra) {
+    if (w < 0) { x += w; w = -w; }
+    return '<rect x="' + f1(x) + '" y="' + f1(y) + '" width="' + f1(Math.max(w, 0)) +
+           '" height="' + f1(Math.max(h, 0)) + '" fill="' + fill + '"' + (extra || "") + "/>";
+  }
+  function DOT(x, y, r, fill) {
+    return '<circle cx="' + f1(x) + '" cy="' + f1(y) + '" r="' + r + '" fill="' + fill +
+           '" stroke="#FFFDF9" stroke-width="2" vector-effect="non-scaling-stroke"/>';
+  }
+  function SVG(w, h, label, inner) {
+    return '<svg class="chart" viewBox="0 0 ' + w + " " + h + '" role="img" tabindex="0" aria-label="' + esc(label) + '">' +
+           inner + "</svg>";
+  }
+
+  function lin(d0, d1, r0, r1) { return function (v) { return r0 + (v - d0) / (d1 - d0) * (r1 - r0); }; }
+  function lg(d0, d1, r0, r1) {
+    var a = Math.log10(d0), b = Math.log10(d1);
+    return function (v) { return r0 + (Math.log10(v) - a) / (b - a) * (r1 - r0); };
+  }
+  function decades(d0, d1) {
+    var out = [], e = Math.ceil(Math.log10(d0) - 1e-9), top = Math.floor(Math.log10(d1) + 1e-9);
+    for (; e <= top; e++) {
+      var v = Math.pow(10, e);
+      out.push({ v: v, label: e < 0 ? v.toFixed(-e) : String(Math.round(v)) });
+    }
+    return out;
+  }
+  function extent(a) { return [Math.min.apply(null, a), Math.max.apply(null, a)]; }
+  function nearestIdx(days, target) {
+    var bi = 0, bd = Infinity;
+    for (var i = 0; i < days.length; i++) {
+      var dd = Math.abs(days[i] - target);
+      if (dd < bd) { bd = dd; bi = i; }
+    }
+    return bi;
+  }
+  function legend(items) {
+    return '<div class="clegend">' + items.map(function (it) {
+      var bg = it[2] === "dash"
+        ? "repeating-linear-gradient(90deg," + it[1] + " 0 4px,transparent 4px 8px)"
+        : it[1];
+      return '<span><i style="background:' + bg + '"></i>' + esc(it[0]) + "</span>";
+    }).join("") + "</div>";
+  }
+  function pillRow(items, activeKey) {
+    return items.map(function (it) {
+      return '<button class="fpill" type="button" data-k="' + it.k + '" aria-pressed="' +
+             (it.k === activeKey) + '">' + esc(it.label) +
+             (it.note ? '<span class="c">' + esc(it.note) + "</span>" : "") + "</button>";
+    }).join("");
+  }
+  function wirePills(el, onPick) {
+    el.addEventListener("click", function (e) {
+      var b = e.target.closest(".fpill");
+      if (!b) return;
+      Array.prototype.forEach.call(el.querySelectorAll(".fpill"), function (p) {
+        p.setAttribute("aria-pressed", String(p === b));
+      });
+      onPick(b.dataset.k);
+    });
+  }
+
+  /* ================= EVIDENCE ================= */
+
+  var EV_DIST = D.evidence.distribution;
+  var evPick = "IRNSS-1I";
+
+  /* Reconstruction error against the threshold, over a day window. */
+  function evTraj(s, x0, x1, H, zoomed) {
+    var ser = D.evidence.series[s.id].score;
+    var W = 470, ml = 44, mr = 12, mt = 14, mb = 26;
+    var day = [], val = [];
+    for (var i = 0; i < ser.day.length; i++) {
+      if (ser.day[i] >= x0 && ser.day[i] <= x1) { day.push(ser.day[i]); val.push(ser.value[i]); }
+    }
+    if (day.length < 2) return "";
+
+    var thr = CAL.threshold, ex = extent(val);
+    var lo = Math.min(ex[0], thr) / 1.8, hi = Math.max(ex[1], thr) * 1.8;
+    var X = lin(x0, x1, ml, W - mr), Y = lg(lo, hi, H - mb, mt);
+    var g = [];
+
+    decades(lo, hi).forEach(function (d) {
+      g.push(LN(ml, Y(d.v), W - mr, Y(d.v), C_RULE, 1));
+      g.push(TX(ml - 6, Y(d.v) + 3.5, d.label, { anchor: "end", mono: true }));
+    });
+
+    /* the detection threshold */
+    g.push(LN(ml, Y(thr), W - mr, Y(thr), C_AMBERINK, 1.5, "5 4"));
+    g.push(TX(W - mr, Y(thr) - 5, "threshold " + fx(thr, 3), { anchor: "end", fill: C_AMBERINK, mono: true }));
+
+    if (s.anomaly_start_day !== null && s.anomaly_start_day >= x0 && s.anomaly_start_day <= x1) {
+      g.push(LN(X(s.anomaly_start_day), mt, X(s.anomaly_start_day), H - mb, C_AMBER, 1.5, "3 3"));
+    }
+
+    g.push(PLY(day.map(function (d, i) { return f1(X(d)) + "," + f1(Y(val[i])); }).join(" "), C_INK, 1.6));
+
+    /* the detection point, annotated with its latency */
+    if (s.detection_day !== null && s.detection_day >= x0 && s.detection_day <= x1) {
+      var k = nearestIdx(day, s.detection_day);
+      var dx = X(day[k]), dy = Y(val[k]);
+      g.push(LN(dx, mt, dx, H - mb, C_INK, 1));
+      g.push(DOT(dx, dy, 4, C_BRICK));
+      if (zoomed) {
+        var right = dx < (ml + W - mr) / 2;
+        g.push(TX(right ? dx + 9 : dx - 9, Math.max(dy - 10, mt + 10),
+                  "detected day " + s.detection_day, { anchor: right ? "start" : "end", fill: C_INK, size: 10.5, weight: 600 }));
+        g.push(TX(right ? dx + 9 : dx - 9, Math.max(dy - 10, mt + 10) + 12,
+                  s.detection_latency_days + " days after onset", { anchor: right ? "start" : "end", fill: C_INK2, size: 10.5 }));
+        g.push(TX(X(s.anomaly_start_day), H - mb + 12, "onset " + s.anomaly_start_day,
+                  { anchor: "middle", fill: C_AMBERINK, mono: true }));
+      }
+    }
+
+    g.push(LN(ml, H - mb, W - mr, H - mb, C_RULE, 1));
+    if (!zoomed) {
+      [x0, Math.round((x0 + x1) / 2), x1].forEach(function (d, i) {
+        g.push(TX(X(d), H - mb + 14, "day " + d, { anchor: i === 0 ? "start" : i === 2 ? "end" : "middle", mono: true }));
+      });
+    } else {
+      g.push(TX(ml, H - 4, "day " + x0, { mono: true }));
+      g.push(TX(W - mr, H - 4, "day " + x1, { anchor: "end", mono: true }));
+    }
+    return SVG(W, H, "Reconstruction error for " + s.id, g.join(""));
+  }
+
+  function evDistChart() {
+    var W = 470, H = 232, ml = 44, mr = 12, mt = 16, mb = 30;
+    var be = EV_DIST.bin_edges, nc = EV_DIST.nominal_counts, ac = EV_DIST.anomalous_counts;
+    var ymax = Math.max(Math.max.apply(null, nc), Math.max.apply(null, ac));
+    var X = lg(be[0], be[be.length - 1], ml, W - mr), Y = lin(0, ymax, H - mb, mt);
+    var g = [];
+
+    [0, 0.25, 0.5, 0.75, 1].forEach(function (t) {
+      g.push(LN(ml, Y(t * ymax), W - mr, Y(t * ymax), C_RULE, 1));
+      g.push(TX(ml - 6, Y(t * ymax) + 3.5, int(Math.round(t * ymax)), { anchor: "end", mono: true }));
+    });
+
+    function area(counts, fill, stroke) {
+      var p = [];
+      for (var i = 0; i < counts.length; i++) {
+        p.push(f1(X(be[i])) + "," + f1(Y(counts[i])), f1(X(be[i + 1])) + "," + f1(Y(counts[i])));
+      }
+      return '<polygon points="' + f1(ml) + "," + f1(Y(0)) + " " + p.join(" ") + " " +
+             f1(X(be[be.length - 1])) + "," + f1(Y(0)) + '" fill="' + fill + '"/>' +
+             PLY(p.join(" "), stroke, 1.4);
+    }
+    g.push(area(nc, "rgba(44,122,99,.20)", C_SAGE));
+    g.push(area(ac, "rgba(190,135,34,.24)", C_AMBER));
+
+    var tx = X(EV_DIST.threshold);
+    g.push(LN(tx, mt, tx, H - mb, C_INK, 1.5));
+    g.push(TX(tx + 6, mt + 9, "threshold " + fx(EV_DIST.threshold, 3), { fill: C_INK, size: 10.5, mono: true }));
+
+    /* direct labels, so the two populations are never identified by colour alone */
+    g.push(TX(X(EV_DIST.nominal_mean), mt + 9, "Nominal", { anchor: "end", fill: C_SAGE, size: 11, weight: 600 }));
+    g.push(TX(X(EV_DIST.anomalous_mean), mt + 24, "Anomalous", { anchor: "middle", fill: C_AMBERINK, size: 11, weight: 600 }));
+
+    g.push(LN(ml, H - mb, W - mr, H - mb, C_RULE, 1));
+    decades(be[0], be[be.length - 1]).forEach(function (d) {
+      g.push(LN(X(d.v), H - mb, X(d.v), H - mb + 4, C_INK3, 1));
+      g.push(TX(X(d.v), H - mb + 15, d.label, { anchor: "middle", mono: true }));
+    });
+    g.push(TX((ml + W - mr) / 2, H - 3, "window reconstruction error (log scale)", { anchor: "middle", size: 10.5 }));
+
+    return SVG(W, H, "Distribution of window reconstruction error for the nominal and anomalous populations", g.join(""));
+  }
+
+  function renderEvidence() {
+    document.getElementById("ev-lede").textContent =
+      "What the detector saw, window by window. The score is the autoencoder reconstruction error over a " +
+      META.window_days + "-day window; a fault is declared once " + CAL.cusum_persistence_windows +
+      " consecutive windows sit above the threshold.";
+
+    document.getElementById("ev-pills").innerHTML = pillRow(SATS.map(function (s) {
+      return { k: s.id, label: s.id, note: s.is_faulted ? "faulted" : null };
+    }), evPick);
+    wirePills(document.getElementById("ev-pills"), function (k) { evPick = k; drawEvidence(); });
+
+    document.getElementById("ev-dist").innerHTML =
+      "<h3>Window score distribution</h3>" +
+      '<p class="sub">All ' + int(META.counts.windows) + " scored windows, split into the two populations the threshold has to separate.</p>" +
+      legend([["Nominal, n=" + int(EV_DIST.nominal_n), C_SAGE], ["Anomalous, n=" + int(EV_DIST.anomalous_n), C_AMBER]]) +
+      evDistChart() +
+      '<p class="cap"><b>Nominal</b> is ' + esc(EV_DIST.nominal_population) +
+      ". <b>Anomalous</b> is every window inside a fault. Nominal mean " + fx(EV_DIST.nominal_mean, 4) +
+      ", anomalous mean " + fx(EV_DIST.anomalous_mean, 2) + ".</p>" +
+      '<p class="cap">' + esc(EV_DIST.note) + "</p>";
+
+    var P = D.performance;
+    document.getElementById("ev-note").innerHTML =
+      "<h3>Why detection lags onset</h3>" +
+      '<p class="keyline">The ' + P.persistence.windows_required +
+      "-window persistence rule is what produces zero false alarms, and it is also what costs the latency. " +
+      "The longest unbroken alarm run on any healthy clock is " + P.persistence.healthy_max_run.cusum +
+      " windows; the shortest on any faulted clock is " + P.persistence.faulted_min_run.cusum +
+      ". A bar at " + P.persistence.windows_required + " sits above every healthy run and far below every faulted one — " +
+      "but waiting for it means a fault is always declared after it begins.</p>" +
+      '<p class="cap">Across the five faults, detection came ' + P.latency.mean_days + " days after onset on average (" +
+      P.latency.min_days + " to " + P.latency.max_days + " days). " + esc(P.latency.note) + "</p>" +
+      '<p class="cap">Single flagged windows are common on healthy clocks: ' +
+      fx(P.persistence.healthy_single_window_alarm_rate.cusum * 100, 2) +
+      "% of their windows cross the threshold at some point. That is why one window is not a detection.</p>";
+
+    drawEvidence();
+    animateIn(document.getElementById("screen-evidence"));
+  }
+
+  function drawEvidence() {
+    var s = byId[evPick];
+    var zoom = "";
+    if (s.anomaly_start_day !== null) {
+      var z0 = Math.max(0, s.anomaly_start_day - 120), z1 = s.detection_day + 150;
+      zoom = '<p class="sub" style="margin:14px 0 6px">Onset window, day ' + z0 + " to " + z1 + "</p>" +
+             evTraj(s, z0, z1, 168, true);
+    } else {
+      zoom = '<p class="cap">No fault was declared on this clock. The trace crosses the threshold in short episodes — ' +
+             "the longest run is " + runFor(s.id) + " windows, well short of the " +
+             CAL.cusum_persistence_windows + " required.</p>";
+    }
+    document.getElementById("ev-traj").innerHTML =
+      "<h3>Reconstruction error · " + esc(s.id) + "</h3>" +
+      '<p class="sub">' + esc(s.clock_type_label) + " · " + esc(s.profile_label) +
+      ". Log scale; the whole " + META.n_days + "-day record.</p>" +
+      legend([["Score", C_INK], ["Threshold", C_AMBERINK, "dash"]].concat(
+        s.is_faulted ? [["Onset", C_AMBER, "dash"], ["Detection", C_BRICK]] : [])) +
+      evTraj(s, 0, META.n_days, 216, false) +
+      zoom;
+  }
+
+  function runFor(id) {
+    var all = D.performance.persistence.longest_alarm_run;
+    var hit = all.healthy.concat(all.faulted).filter(function (r) { return r.id === id; })[0];
+    return hit ? hit.cusum : "—";
+  }
+
+  /* ================= PROGNOSIS ================= */
+
+  var PR_SATS = PROG.satellites.filter(function (p) { return p.has_projection; });
+  var prPick = "IRNSS-1I";
+
+  function prChart(p) {
+    var W = 880, H = 330, ml = 52, mr = 118, mt = 18, mb = 34;
+    var obs = p.observed;
+    var ciLo = p.reference_day + p.rul_ci95[0], ciHi = p.reference_day + p.rul_ci95[1];
+    var x0 = obs.day[0], x1 = Math.max(obs.day[obs.day.length - 1], ciHi + 20);
+    var vals = obs.value.concat([p.failure_limit, 1.005]);
+    var ex = extent(vals);
+    var X = lin(x0, x1, ml, W - mr), Y = lin(ex[0] - 0.008, ex[1] + 0.008, H - mb, mt);
+    var g = [];
+
+    /* the 90-day window the line was fitted on */
+    g.push(RC(X(p.fit_window[0]), mt, X(p.fit_window[1]) - X(p.fit_window[0]), H - mb - mt, "rgba(190,135,34,.10)"));
+    g.push(TX((X(p.fit_window[0]) + X(p.fit_window[1])) / 2, mt + 11,
+              PROG.trend_window_days + "-day fit", { anchor: "middle", fill: C_AMBERINK, size: 10 }));
+
+    /* the 95% interval on the crossing */
+    g.push(RC(X(ciLo), mt, X(ciHi) - X(ciLo), H - mb - mt, "rgba(190,135,34,.22)"));
+
+    [0.86, 0.90, 0.94, 0.98, 1.02].forEach(function (v) {
+      if (v < ex[0] - 0.008 || v > ex[1] + 0.008) return;
+      g.push(LN(ml, Y(v), W - mr, Y(v), C_RULE, 1));
+      g.push(TX(ml - 7, Y(v) + 3.5, v.toFixed(2), { anchor: "end", mono: true }));
+    });
+
+    /* the failure limit */
+    g.push(LN(ml, Y(p.failure_limit), W - mr, Y(p.failure_limit), C_BRICK, 1.5, "5 4"));
+    g.push(TX(W - mr + 8, Y(p.failure_limit) + 3.5, "limit " + p.failure_limit,
+              { fill: C_BRICK, size: 10.5, mono: true }));
+
+    /* the observed plateau */
+    var pl = p.outcome.observed_plateau_level;
+    g.push(LN(X(p.reference_day), Y(pl), W - mr, Y(pl), C_SAGE, 1, "2 3"));
+    g.push(TX(W - mr + 8, Y(pl) + 3.5, "plateau " + fx(pl, 3), { fill: C_SAGE, size: 10.5, mono: true }));
+
+    /* observed, split at the day the projection was made */
+    var known = [], later = [];
+    for (var i = 0; i < obs.day.length; i++) {
+      var pt = f1(X(obs.day[i])) + "," + f1(Y(obs.value[i]));
+      if (obs.day[i] <= obs.known_through_day) known.push(pt);
+      if (obs.day[i] >= obs.known_through_day) later.push(pt);
+    }
+    g.push(PLY(later.join(" "), C_SAGE, 2));
+    g.push(PLY(known.join(" "), C_INK, 1.8));
+
+    /* the fit and its extrapolation */
+    g.push(PLY(p.fit_line.day.map(function (d, i) { return f1(X(d)) + "," + f1(Y(p.fit_line.value[i])); }).join(" "), C_AMBER, 2.4));
+    g.push(PLY(p.projection.day.map(function (d, i) { return f1(X(d)) + "," + f1(Y(p.projection.value[i])); }).join(" "), C_AMBER, 2, "6 4"));
+
+    /* reference day and the projected crossing */
+    g.push(LN(X(p.reference_day), mt, X(p.reference_day), H - mb, C_INK, 1.5));
+    g.push(TX(X(p.reference_day), mt - 5, "reference day " + p.reference_day, { anchor: "middle", fill: C_INK, size: 10.5 }));
+    g.push(DOT(X(p.crossing_day), Y(p.failure_limit), 4.5, C_AMBERINK));
+    g.push(TX(X(p.crossing_day), Y(p.failure_limit) + 18, "projected crossing day " + Math.round(p.crossing_day),
+              { anchor: "middle", fill: C_AMBERINK, size: 10.5, weight: 600 }));
+    g.push(TX(X(p.crossing_day), Y(p.failure_limit) + 30, "95% CI " + ciLo + "–" + ciHi,
+              { anchor: "middle", fill: C_AMBERINK, size: 10, mono: true }));
+
+    g.push(LN(ml, H - mb, W - mr, H - mb, C_RULE, 1));
+    g.push(TX(ml, H - mb + 15, "day " + x0, { mono: true }));
+    g.push(TX(W - mr, H - mb + 15, "day " + Math.round(x1), { anchor: "end", mono: true }));
+    g.push(TX((ml + W - mr) / 2, H - 4, "RAFS signal level", { anchor: "middle", size: 10.5 }));
+
+    return SVG(W, H, "Signal-level projection for " + p.id, g.join(""));
+  }
+
+  function renderPrognosis() {
+    document.getElementById("pr-lede").textContent =
+      "The remaining-life figure on each constellation card, and what the record did afterwards. " +
+      "Ordinary least squares on the RAFS signal level over the " + PROG.trend_window_days +
+      " days ending on the reference day, extrapolated at a constant rate to the " + PROG.failure_limit + " limit.";
+
+    document.getElementById("pr-pills").innerHTML = pillRow(PR_SATS.map(function (p) {
+      return { k: p.id, label: p.id, note: p.rul_days + "d" };
+    }), prPick);
+    wirePills(document.getElementById("pr-pills"), function (k) { prPick = k; drawPrognosis(); });
+
+    drawPrognosis();
+    animateIn(document.getElementById("screen-prognosis"));
+  }
+
+  function drawPrognosis() {
+    var p = PR_SATS.filter(function (x) { return x.id === prPick; })[0];
+    var o = p.outcome;
+
+    document.getElementById("pr-chart").innerHTML =
+      "<h3>" + esc(p.id) + " · " + esc(p.profile_label) + "</h3>" +
+      '<p class="sub">Projection made on day ' + p.reference_day + ", " + PROG.prognosis_lag_days +
+      " days after detection. The record continues past it.</p>" +
+      legend([
+        ["Observed, known at projection", C_INK],
+        ["Fitted decline", C_AMBER],
+        ["Extrapolation to the limit", C_AMBER, "dash"],
+        ["Observed since", C_SAGE],
+        ["Failure limit", C_BRICK, "dash"]
+      ]) +
+      prChart(p);
+
+    document.getElementById("pr-table").innerHTML =
+      "<h3>Numbers</h3>" +
+      '<table class="data"><tbody>' +
+      [["Reference day", "day " + p.reference_day],
+       ["Fit window", "day " + p.fit_window[0] + "–" + p.fit_window[1]],
+       ["Level at reference", fx(p.level_at_reference, 5)],
+       ["Fitted slope", sci(p.slope_per_day) + " / day"],
+       ["Remaining life", p.rul_days + " days"],
+       ["95% interval", p.rul_ci95[0] + "–" + p.rul_ci95[1] + " days"],
+       ["Standard error", "±" + fx(p.rul_se_days, 1) + " days"],
+       ["Projected crossing", "day " + fx(p.crossing_day, 1)],
+       ["Reached the limit?", o.crossed_limit ? "yes" : "no"],
+       ["Observed plateau", fx(o.observed_plateau_level, 5)],
+       ["Lowest level since", fx(o.observed_min_after_reference, 5)]
+      ].map(function (r) { return "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>"; }).join("") +
+      "</tbody></table>";
+
+    document.getElementById("pr-note").innerHTML =
+      "<h3>How to read this</h3>" +
+      '<p class="keyline">Treat the figure as <b>a bound on the decline rate, not a failure date.</b> ' +
+      "At the rate measured over the fit window, " + esc(p.id) + " would reach " + p.failure_limit +
+      " on day " + Math.round(p.crossing_day) + ". It did not: the level flattened at " +
+      fx(o.observed_plateau_level, 3) + " and the lowest it ever reached was " +
+      fx(o.observed_min_after_reference, 3) + ".</p>" +
+      '<p class="cap">' + esc(o.note) + "</p>" +
+      '<p class="cap">The projection is still the operationally useful number — it says how fast the clock is losing ' +
+      "margin at the moment the call is made, which is what schedules a review. It is not a prediction that the clock " +
+      "stops working on that day.</p>";
+  }
+
+  /* ================= PERFORMANCE ================= */
+
+  /* Stated per detector, because the two columns differ. */
+  function runRange(which) {
+    var r = D.performance.persistence.longest_alarm_run;
+    var lab = D.performance.detectors[which].label;
+    var h = extent(r.healthy.map(function (x) { return x[which]; }));
+    var fl = extent(r.faulted.map(function (x) { return x[which]; }));
+    return "Under <b>" + esc(lab) + "</b> " +
+           (h[1] === 0 ? "no healthy clock ever crosses the threshold at all"
+                       : "healthy clocks run " + h[0] + "–" + h[1] + " windows") +
+           " and faulted clocks " + int(fl[0]) + "–" + int(fl[1]) + ".";
+  }
+
+  /* The verdict is derived, never asserted: whichever way the matched
+     comparison falls, this reports it. Re-runs cannot leave it stale. */
+  function detectorVerdict(cu, th) {
+    var P = D.performance;
+    var h2h = P.comparison.filter(function (c) { return c.cusum_gain_days !== null; });
+    var d = cu.window_level.f1 - th.window_level.f1;
+    var earlier = h2h.filter(function (c) { return c.cusum_gain_days > 0; }).length;
+    var later = h2h.filter(function (c) { return c.cusum_gain_days < 0; }).length;
+
+    var head = (d > 0.002 && earlier > later) ? "CUSUM beat plain thresholding."
+             : (d < -0.002 && later > earlier) ? "Plain thresholding beat CUSUM."
+             : "CUSUM did not beat plain thresholding.";
+
+    return "<b>" + head + "</b> At a matched false-alarm rate the two are separated by " +
+           fx(Math.abs(d), 4) + " of F1 — " +
+           int(Math.abs(cu.window_level.true_positives - th.window_level.true_positives)) +
+           " windows out of " + int(META.counts.windows) + ". CUSUM declared first on " + earlier +
+           " of " + h2h.length + " faults and later on " + later + ", mean " +
+           fx(P.cusum_gain.mean_days, 1) + " days. Same windows, same threshold, same persistence " +
+           "rule — the comparison is matched, and reported whichever way it comes out.";
+  }
+
+  function pfRunChart(which, label) {
+    var runs = D.performance.persistence.longest_alarm_run;
+    var rows = runs.healthy.map(function (r) { return { id: r.id, v: r[which], faulted: false }; })
+      .concat(runs.faulted.map(function (r) { return { id: r.id, v: r[which], faulted: true }; }));
+    var W = 434, mt = 24, mb = 32, ml = 66, mr = 14, rowH = 22;
+    var H = mt + mb + rows.length * rowH;
+    /* Domain follows the data; a run of 0 has no place on a log axis and is
+       drawn as a bare label at the origin rather than log10(0) = -Infinity. */
+    var top = Math.max(100, Math.max.apply(null, rows.map(function (r) { return r.v; })) * 1.3);
+    var X = lg(1, top, ml, W - mr);
+    var g = [];
+
+    decades(1, top).forEach(function (d) {
+      g.push(LN(X(d.v), mt, X(d.v), H - mb, C_RULE, 1));
+      g.push(TX(X(d.v), H - mb + 14, d.label, { anchor: "middle", mono: true }));
+    });
+
+    rows.forEach(function (r, i) {
+      var y = mt + i * rowH + rowH / 2;
+      var zero = !(r.v >= 1);
+      var end = zero ? ml : X(r.v);
+      g.push(TX(ml - 7, y + 3.5, r.id, { anchor: "end", size: 10.5, fill: C_INK2 }));
+      if (!zero) {
+        g.push(RC(ml, y - 5, Math.max(end - ml, 1.5), 10, r.faulted ? C_AMBER : C_SAGE, ' rx="2"'));
+      }
+      g.push(TX(end + 6, y + 3.5, zero ? "0" : int(r.v),
+                { size: 10, mono: true, fill: zero ? C_INK3 : C_INK2 }));
+    });
+
+    var bx = X(D.performance.persistence.windows_required);
+    g.push(LN(bx, mt - 8, bx, H - mb, C_BRICK, 2));
+    g.push(TX(bx, mt - 12, "60", { anchor: "middle", fill: C_BRICK, size: 10.5, weight: 600, mono: true }));
+    g.push(TX((ml + W - mr) / 2, H - 4, "longest unbroken alarm run, windows (log scale)", { anchor: "middle", size: 10.5 }));
+
+    return SVG(W, H, label + " alarm run lengths", g.join(""));
+  }
+
+  function pfGainChart() {
+    var rows = D.performance.comparison.filter(function (c) { return c.cusum_gain_days !== null; });
+    var W = 880, mt = 16, mb = 34, ml = 78, mr = 44, rowH = 26;
+    var H = mt + mb + rows.length * rowH;
+    /* Domain spans the actual gains, always including zero so the sign reads. */
+    var gains = rows.map(function (r) { return r.cusum_gain_days; });
+    var g0 = Math.min(0, Math.min.apply(null, gains)), g1 = Math.max(0, Math.max.apply(null, gains));
+    var pad = Math.max(2, Math.ceil((g1 - g0) * 0.18));
+    var d0 = g0 - pad, d1 = g1 + pad;
+    var step = (d1 - d0) <= 12 ? 2 : (d1 - d0) <= 30 ? 5 : 10;
+    var X = lin(d0, d1, ml, W - mr);
+    var g = [];
+
+    for (var t = Math.ceil(d0 / step) * step; t <= d1; t += step) {
+      g.push(LN(X(t), mt, X(t), H - mb, C_RULE, 1));
+      g.push(TX(X(t), H - mb + 14, (t > 0 ? "+" : "") + t, { anchor: "middle", mono: true }));
+    }
+    g.push(LN(X(0), mt, X(0), H - mb, C_INK3, 1.5));
+
+    rows.forEach(function (r, i) {
+      var y = mt + i * rowH + rowH / 2;
+      g.push(TX(ml - 8, y + 3.5, r.id, { anchor: "end", size: 10.5, fill: C_INK2 }));
+      g.push(RC(X(0), y - 6, X(r.cusum_gain_days) - X(0), 12, r.cusum_gain_days > 0 ? C_ACCENT : C_INK3, ' rx="2"'));
+      var end = X(r.cusum_gain_days);
+      g.push(TX(r.cusum_gain_days > 0 ? end + 6 : end - 6, y + 3.5,
+                (r.cusum_gain_days > 0 ? "+" : "") + r.cusum_gain_days + " d",
+                { anchor: r.cusum_gain_days > 0 ? "start" : "end", size: 10, mono: true, fill: C_INK2 }));
+    });
+    g.push(TX((ml + W - mr) / 2, H - 4, "days CUSUM declared before the plain threshold (negative = later)",
+              { anchor: "middle", size: 10.5 }));
+
+    return SVG(W, H, "CUSUM lead over plain thresholding, per fault", g.join(""));
+  }
+
+  function renderPerformance() {
+    var P = D.performance, cu = P.detectors.cusum, th = P.detectors.threshold;
+
+    document.getElementById("pf-lede").textContent =
+      "How the detector scores, and what happened when we put CUSUM against plain thresholding on the same data " +
+      "with the same persistence rule.";
+
+    document.getElementById("pf-roc").innerHTML =
+      "<h3>Ranking quality</h3>" +
+      '<div class="hero"><span class="v" data-count="' + P.roc_auc + '" data-fmt="4">' + P.roc_auc +
+      '</span><span class="k">ROC AUC, window level</span></div>' +
+      '<p class="cap">' + esc(P.roc_auc_note) + "</p>";
+
+    document.getElementById("pf-sat").innerHTML =
+      "<h3>Satellite level</h3>" +
+      '<div class="hero"><span class="v">' + cu.satellite_level.faulted_caught + "/" + cu.satellite_level.faulted_total +
+      '</span><span class="k">faults caught</span><span class="v">' + cu.satellite_level.healthy_false_alarms + "/" +
+      cu.satellite_level.healthy_total + '</span><span class="k">healthy clocks falsely alarmed</span></div>' +
+      '<p class="cap">Both detectors reach the same satellite-level result: every fault found, nothing raised on a healthy clock.</p>';
+
+    function drow(label, d) {
+      return "<tr><td>" + label + "</td><td>" + fx(d.precision, 4) + "</td><td>" + fx(d.recall, 4) +
+             "</td><td>" + fx(d.f1, 4) + "</td><td>" + int(d.true_positives) + "</td><td>" +
+             int(d.false_positives) + "</td><td>" + int(d.false_negatives) + "</td><td>" +
+             int(d.true_negatives) + "</td></tr>";
+    }
+    document.getElementById("pf-detectors").innerHTML =
+      "<h3>Window-level scores, both detectors</h3>" +
+      '<p class="sub">Same windows, same threshold, same ' + P.persistence.windows_required +
+      "-window persistence rule — a matched comparison.</p>" +
+      '<div class="tscroll"><table class="data"><thead><tr><th>Detector</th><th>Precision</th><th>Recall</th>' +
+      "<th>F1</th><th>TP</th><th>FP</th><th>FN</th><th>TN</th></tr></thead><tbody>" +
+      drow(cu.label, cu.window_level) + drow(th.label, th.window_level) +
+      "</tbody></table></div>" +
+      '<p class="keyline">' + detectorVerdict(cu, th) + "</p>";
+
+    var h2h = P.comparison.filter(function (c) { return c.onset_day !== null; });
+    document.getElementById("pf-head2head").innerHTML =
+      "<h3>Head to head, per fault</h3>" +
+      '<p class="sub">Detection day and latency for each detector, and the days between them.</p>' +
+      '<div class="tscroll"><table class="data"><thead><tr><th>Satellite</th><th>Onset</th>' +
+      "<th>Threshold day</th><th>Threshold latency</th><th>CUSUM day</th><th>CUSUM latency</th><th>CUSUM lead</th>" +
+      "</tr></thead><tbody>" +
+      h2h.map(function (c) {
+        return "<tr><td>" + esc(c.id) + "</td><td>" + c.onset_day + "</td><td>" + c.threshold_detection_day +
+               "</td><td>" + c.threshold_latency_days + " d</td><td>" + c.cusum_detection_day + "</td><td>" +
+               c.cusum_latency_days + " d</td><td" + (c.cusum_gain_days > 0 ? "" : ' class="neg"') + ">" +
+               (c.cusum_gain_days > 0 ? "+" : "") + c.cusum_gain_days + " d</td></tr>";
+      }).join("") +
+      "</tbody></table></div>" +
+      pfGainChart() +
+      '<p class="cap">Mean lead ' + fx(P.cusum_gain.mean_days, 1) + " days, range " + P.cusum_gain.min_days +
+      " to " + P.cusum_gain.max_days + " days. CUSUM was the later of the two on " +
+      h2h.filter(function (c) { return c.cusum_gain_days < 0; }).length + " of " + h2h.length + " faults.</p>" +
+      '<p class="cap">' + esc(P.cusum_gain.note) + "</p>";
+
+    document.getElementById("pf-persistence").innerHTML =
+      "<h3>What the persistence rule is doing</h3>" +
+      '<p class="sub">Longest unbroken run of flagged windows per clock. The bar at ' +
+      P.persistence.windows_required + " is the declaration rule.</p>" +
+      legend([["Healthy clock", C_SAGE], ["Faulted clock", C_AMBER]]) +
+      '<div class="grid2">' +
+      "<div><p class=\"sub\" style=\"margin-bottom:4px\">" + esc(cu.label) + "</p>" + pfRunChart("cusum", cu.label) + "</div>" +
+      "<div><p class=\"sub\" style=\"margin-bottom:4px\">" + esc(th.label) + "</p>" + pfRunChart("threshold", th.label) + "</div>" +
+      "</div>" +
+      '<p class="keyline">' + runRange("cusum") + " " + runRange("threshold") +
+      " Nothing lands between the two populations under either detector, which is why a bar on run length " +
+      "separates them where a bar on a single window cannot.</p>" +
+      '<p class="cap">' + esc(P.persistence.note) + "</p>";
+
+    animateIn(document.getElementById("screen-performance"));
+  }
+
+  /* ================= chart lightbox ================= */
+
+  var LB = document.getElementById("lightbox"), lbReturn = null;
+
+  function openLightbox(svg) {
+    if (!LB.hidden) return;
+    var host = svg.closest(".panel") || svg.closest(".card");
+    var title = host && host.querySelector("h3, .ch-id");
+    var near = svg.previousElementSibling;
+    while (near && !/^(H3|H4|P)$/.test(near.tagName)) near = near.previousElementSibling;
+
+    document.getElementById("lb-cap").textContent =
+      (near && near.tagName === "H4" ? near.textContent
+        : title ? title.textContent : "Chart").replace(/\s+/g, " ").trim();
+    document.getElementById("lb-sub").textContent = svg.getAttribute("aria-label") || "";
+
+    var body = document.getElementById("lb-body");
+    body.innerHTML = "";
+    var clone = svg.cloneNode(true);
+    clone.removeAttribute("tabindex");
+    body.appendChild(clone);
+
+    lbReturn = document.activeElement;
+    LB.hidden = false;
     document.body.style.overflow = "hidden";
-    requestAnimationFrame(function () { lb.classList.add("on"); });
-    lbX.focus();
+    hideTip();
+    requestAnimationFrame(function () { LB.classList.add("on"); });
+    document.getElementById("lb-close").focus();
   }
 
-  function closeLb() {
-    lb.classList.remove("on");
-    var finish = function () {
-      lb.hidden = true;
-      lbImg.removeAttribute("src");
-    };
-    if (reduced) { finish(); } else { setTimeout(finish, 200); }
+  function closeLightbox() {
+    if (LB.hidden) return;
+    LB.classList.remove("on");
     document.body.style.overflow = "";
-    if (lastFocus) { lastFocus.focus(); }
+    var finish = function () {
+      LB.hidden = true;
+      document.getElementById("lb-body").innerHTML = "";
+    };
+    if (REDUCED) finish(); else setTimeout(finish, 180);
+    if (lbReturn && lbReturn.focus) lbReturn.focus();
+    lbReturn = null;
   }
 
-  slice(document.querySelectorAll(".plate img")).forEach(function (img) {
-    img.setAttribute("role", "button");
-    img.setAttribute("tabindex", "0");
-    img.addEventListener("click", function () { openLb(img); });
-    img.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLb(img); }
-    });
+  document.addEventListener("click", function (e) {
+    if (!LB.hidden) return;                       /* the overlay handles its own clicks */
+    if (!e.target.closest) return;
+    var svg = e.target.closest("svg.chart, svg.spark");
+    if (svg) openLightbox(svg);
   });
 
-  lb.addEventListener("click", closeLb);
+  LB.addEventListener("click", closeLightbox);
+
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !lb.hidden) { closeLb(); }
+    if (e.key === "Escape") { closeLightbox(); return; }
+    var a = document.activeElement;
+    if ((e.key === "Enter" || e.key === " ") && a && a.matches && a.matches("svg.chart, svg.spark")) {
+      e.preventDefault();
+      openLightbox(a);
+    }
   });
-}());
-</script>
 
+  /* ================= tabs ================= */
+
+  var SCREENS = ["constellation", "evidence", "prognosis", "performance"];
+  var RENDERED = {};
+  var RENDERERS = { evidence: renderEvidence, prognosis: renderPrognosis, performance: renderPerformance };
+  var current = "constellation";
+
+  function activate(want) {
+    if (want === current) return;
+    var curEl = document.getElementById("screen-" + current);
+    var nxEl = document.getElementById("screen-" + want);
+
+    function swap() {
+      if (RENDERERS[want] && !RENDERED[want]) { RENDERERS[want](); RENDERED[want] = true; }
+      SCREENS.forEach(function (k) { document.getElementById("screen-" + k).hidden = k !== want; });
+      curEl.classList.remove("out");
+      current = want;
+      window.scrollTo(0, 0);
+      if (REDUCED) return;
+      nxEl.classList.add("out");
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { nxEl.classList.remove("out"); });
+      });
+    }
+
+    if (REDUCED) { swap(); return; }
+    curEl.classList.add("out");
+    setTimeout(swap, 160);
+  }
+
+  var tabsEl = document.querySelector(".tabbar-in");
+  tabsEl.addEventListener("click", function (e) {
+    var b = e.target.closest(".tab");
+    if (!b) return;
+    var want = b.dataset.screen;
+    Array.prototype.forEach.call(tabsEl.querySelectorAll(".tab"), function (t) {
+      t.setAttribute("aria-selected", String(t.dataset.screen === want));
+    });
+    activate(want);
+    hideTip();
+  });
+
+  applyFilter(false);
+  animateIn(document.getElementById("screen-constellation"));
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,863 @@
+{
+  "calibration": {
+    "mu": 0.1519254931861528,
+    "sd": 0.04327042411453573,
+    "static_threshold": 0.4980888861024386
+  },
+  "rows": [
+    {
+      "name": "static  mu + 8sd   (shipped)",
+      "note": "",
+      "precision": 0.9731683581259558,
+      "recall": 1.0,
+      "f1": 0.9864017473402381,
+      "f05": 0.9784188750978419,
+      "TP": 7000,
+      "FP": 193,
+      "FN": 0,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2380,
+          "lead": -30,
+          "window_recall": 1.0
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 914,
+          "lead": -14,
+          "window_recall": 1.0
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2122,
+          "lead": -22,
+          "window_recall": 1.0
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 414,
+          "lead": -14,
+          "window_recall": 1.0
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1772,
+          "lead": -22,
+          "window_recall": 1.0
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "static  healthy p99 bar = 0.2713",
+      "note": "",
+      "precision": 0.9333333333333333,
+      "recall": 1.0,
+      "f1": 0.9655172413793104,
+      "f05": 0.9459459459459459,
+      "TP": 7000,
+      "FP": 500,
+      "FN": 0,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2375,
+          "lead": -25,
+          "window_recall": 1.0
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 905,
+          "lead": -5,
+          "window_recall": 1.0
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2112,
+          "lead": -12,
+          "window_recall": 1.0
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 410,
+          "lead": -10,
+          "window_recall": 1.0
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1763,
+          "lead": -13,
+          "window_recall": 1.0
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "static  healthy p99.9 bar = 0.3337",
+      "note": "",
+      "precision": 0.9667173042397459,
+      "recall": 1.0,
+      "f1": 0.9830770311073661,
+      "f05": 0.9731954176398621,
+      "TP": 7000,
+      "FP": 241,
+      "FN": 0,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2377,
+          "lead": -27,
+          "window_recall": 1.0
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 910,
+          "lead": -10,
+          "window_recall": 1.0
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2113,
+          "lead": -13,
+          "window_recall": 1.0
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 411,
+          "lead": -11,
+          "window_recall": 1.0
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1766,
+          "lead": -16,
+          "window_recall": 1.0
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "static  healthy p100 bar = 0.4357",
+      "note": "",
+      "precision": 0.9723572718433116,
+      "recall": 1.0,
+      "f1": 0.9859849285160927,
+      "f05": 0.9777628785339144,
+      "TP": 7000,
+      "FP": 199,
+      "FN": 0,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2380,
+          "lead": -30,
+          "window_recall": 1.0
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 912,
+          "lead": -12,
+          "window_recall": 1.0
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2122,
+          "lead": -22,
+          "window_recall": 1.0
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 413,
+          "lead": -13,
+          "window_recall": 1.0
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1770,
+          "lead": -20,
+          "window_recall": 1.0
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "rolling  90d mean+3sd [all]",
+      "note": "",
+      "precision": 0.11798839458413926,
+      "recall": 0.008714285714285714,
+      "f1": 0.016229878941066915,
+      "f05": 0.03363475959417732,
+      "TP": 61,
+      "FP": 456,
+      "FN": 6939,
+      "faulted_caught": 0,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 0.009099143610013174,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": 0.00909090909090909
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": 0.011
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": 0.01125
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": 0.0068
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": 0.006956521739130435
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "rolling  90d mean+3sd [unflag]",
+      "note": "",
+      "precision": 0.8997429305912596,
+      "recall": 1.0,
+      "f1": 0.9472259810554804,
+      "f05": 0.9181532004197271,
+      "TP": 7000,
+      "FP": 780,
+      "FN": 0,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2375,
+          "lead": -25,
+          "window_recall": 1.0
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 903,
+          "lead": -3,
+          "window_recall": 1.0
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2102,
+          "lead": -2,
+          "window_recall": 1.0
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 411,
+          "lead": -11,
+          "window_recall": 1.0
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1754,
+          "lead": -4,
+          "window_recall": 1.0
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "rolling 180d mean+3sd [all]",
+      "note": "",
+      "precision": 0.401894451962111,
+      "recall": 0.04242857142857143,
+      "f1": 0.07675410259723478,
+      "f05": 0.1491562876657292,
+      "TP": 297,
+      "FP": 442,
+      "FN": 6703,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 0.06592885375494072,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2378,
+          "lead": -28,
+          "window_recall": 0.0890909090909091
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 903,
+          "lead": -3,
+          "window_recall": 0.038
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2112,
+          "lead": -12,
+          "window_recall": 0.06
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 411,
+          "lead": -11,
+          "window_recall": 0.0272
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1763,
+          "lead": -13,
+          "window_recall": 0.04869565217391304
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "rolling 180d mean+3sd [unflag]",
+      "note": "",
+      "precision": 0.9162303664921466,
+      "recall": 1.0,
+      "f1": 0.9562841530054645,
+      "f05": 0.931842385516507,
+      "TP": 7000,
+      "FP": 640,
+      "FN": 0,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2377,
+          "lead": -27,
+          "window_recall": 1.0
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 903,
+          "lead": -3,
+          "window_recall": 1.0
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2104,
+          "lead": -4,
+          "window_recall": 1.0
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 411,
+          "lead": -11,
+          "window_recall": 1.0
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1763,
+          "lead": -13,
+          "window_recall": 1.0
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    },
+    {
+      "name": "rolling  90d mean + 0.5 offset [unflag]",
+      "note": "",
+      "precision": 0.9746588693957114,
+      "recall": 1.0,
+      "f1": 0.9871668311944718,
+      "f05": 0.9796238244514106,
+      "TP": 7000,
+      "FP": 182,
+      "FN": 0,
+      "faulted_caught": 5,
+      "faulted_total": 5,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0,
+      "per_satellite": {
+        "IRNSS-1A": {
+          "profile": "noise_increase",
+          "sustained_day": 2380,
+          "lead": -30,
+          "window_recall": 1.0
+        },
+        "IRNSS-1B": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1C": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1D": {
+          "profile": "degraded",
+          "sustained_day": 915,
+          "lead": -15,
+          "window_recall": 1.0
+        },
+        "IRNSS-1E": {
+          "profile": "sudden_jump",
+          "sustained_day": 2130,
+          "lead": -30,
+          "window_recall": 1.0
+        },
+        "IRNSS-1F": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "IRNSS-1G": {
+          "profile": "degraded",
+          "sustained_day": 416,
+          "lead": -16,
+          "window_recall": 1.0
+        },
+        "IRNSS-1I": {
+          "profile": "slow_drift",
+          "sustained_day": 1775,
+          "lead": -25,
+          "window_recall": 1.0
+        },
+        "NVS-01": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        },
+        "NVS-02": {
+          "profile": "healthy",
+          "sustained_day": null,
+          "lead": null,
+          "window_recall": null
+        }
+      }
+    }
+  ],
+  "sigma_sweep": [
+    {
+      "k": 1,
+      "thr": 0.19519591730068853,
+      "precision": 0.6526806526806527,
+      "recall": 1.0,
+      "f05": 0.7014028056112225,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    },
+    {
+      "k": 2,
+      "thr": 0.23846634141522427,
+      "precision": 0.8602679120068821,
+      "recall": 1.0,
+      "f05": 0.8850005057145747,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    },
+    {
+      "k": 3,
+      "thr": 0.28173676552976,
+      "precision": 0.9453072248480756,
+      "recall": 1.0,
+      "f05": 0.9557618787547788,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    },
+    {
+      "k": 4,
+      "thr": 0.32500718964429576,
+      "precision": 0.9647188533627343,
+      "recall": 1.0,
+      "f05": 0.9715745058849655,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    },
+    {
+      "k": 5,
+      "thr": 0.3682776137588315,
+      "precision": 0.9697977279024661,
+      "recall": 1.0,
+      "f05": 0.9756913470115969,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    },
+    {
+      "k": 8,
+      "thr": 0.4980888861024386,
+      "precision": 0.9731683581259558,
+      "recall": 1.0,
+      "f05": 0.9784188750978419,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    },
+    {
+      "k": 12,
+      "thr": 0.6711705825605815,
+      "precision": 0.974794596852806,
+      "recall": 1.0,
+      "f05": 0.9797335124846042,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    },
+    {
+      "k": 20,
+      "thr": 1.0173339754768675,
+      "precision": 0.9786103732699567,
+      "recall": 1.0,
+      "f05": 0.9828147815343143,
+      "healthy_false_alarms": 0,
+      "faulted_caught": 5,
+      "late_onset_recall": 1.0
+    }
+  ],
+  "offset_sweep": [
+    {
+      "offset": 0.02,
+      "precision": 0.41612174533349183,
+      "recall": 1.0,
+      "f05": 0.4711393495584751,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0
+    },
+    {
+      "offset": 0.05,
+      "precision": 0.6245538900785154,
+      "recall": 1.0,
+      "f05": 0.6752585275505479,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0
+    },
+    {
+      "offset": 0.1,
+      "precision": 0.9010168618869867,
+      "recall": 1.0,
+      "f05": 0.9192142031726022,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0
+    },
+    {
+      "offset": 0.15,
+      "precision": 0.9607466373867691,
+      "recall": 1.0,
+      "f05": 0.9683488269145639,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0
+    },
+    {
+      "offset": 0.2,
+      "precision": 0.9685900096859001,
+      "recall": 1.0,
+      "f05": 0.9747131558427092,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0
+    },
+    {
+      "offset": 0.3,
+      "precision": 0.972492358988608,
+      "recall": 1.0,
+      "f05": 0.9778721502011624,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0
+    },
+    {
+      "offset": 0.5,
+      "precision": 0.9746588693957114,
+      "recall": 1.0,
+      "f05": 0.9796238244514106,
+      "healthy_false_alarms": 0,
+      "late_onset_recall": 1.0
+    }
+  ],
+  "recall_ceiling": {
+    "n_pre_onset_labelled_positive": 1242,
+    "corrected": [
+      {
+        "bar": "shipped mu+8sd",
+        "threshold": 0.4980888861024386,
+        "fn_that_are_pre_onset": 0,
+        "corrected_precision": 0.9731683581259558,
+        "corrected_recall": 1.0,
+        "corrected_f05": 0.9784188750978419
+      },
+      {
+        "bar": "previous mu+3sd",
+        "threshold": 0.28173676552976,
+        "fn_that_are_pre_onset": 0,
+        "corrected_precision": 0.9453072248480756,
+        "corrected_recall": 1.0,
+        "corrected_f05": 0.9557618787547788
+      }
+    ]
+  }
+}

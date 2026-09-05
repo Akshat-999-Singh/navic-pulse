@@ -1,22 +1,22 @@
 {
   "dataset": {
     "windows": 28710,
-    "anomalous_windows": 8242,
-    "healthy_windows": 20468,
+    "anomalous_windows": 7000,
+    "healthy_windows": 21710,
     "satellites": 10
   },
-  "anomaly_score_roc_auc": 0.9348301077286048,
+  "anomaly_score_roc_auc": 0.9999833453971179,
   "cusum_persistence_windows": 60,
   "detectors": {
     "cusum": {
       "window_level": {
         "precision": 1.0,
-        "recall": 0.8425139529240475,
-        "f1": 0.9145265376004215,
+        "recall": 0.992,
+        "f1": 0.9959839357429718,
         "true_positives": 6944,
         "false_positives": 0,
-        "true_negatives": 20468,
-        "false_negatives": 1298
+        "true_negatives": 21710,
+        "false_negatives": 56
       },
       "satellite_level": {
         "faulted_caught": 5,
@@ -91,12 +91,12 @@
     "threshold": {
       "window_level": {
         "precision": 1.0,
-        "recall": 0.8413006551807813,
-        "f1": 0.9138112809699526,
-        "true_positives": 6934,
+        "recall": 0.9854285714285714,
+        "f1": 0.9926608145056842,
+        "true_positives": 6898,
         "false_positives": 0,
-        "true_negatives": 20468,
-        "false_negatives": 1308
+        "true_negatives": 21710,
+        "false_negatives": 102
       },
       "satellite_level": {
         "faulted_caught": 5,
@@ -138,32 +138,32 @@
           "IRNSS-1I": {
             "profile": "slow_drift",
             "anomaly_start_day": 1750,
-            "first_sustained_detection_day": 1763,
-            "lead_days": -13
+            "first_sustained_detection_day": 1772,
+            "lead_days": -22
           },
           "IRNSS-1E": {
             "profile": "sudden_jump",
             "anomaly_start_day": 2100,
-            "first_sustained_detection_day": 2113,
-            "lead_days": -13
+            "first_sustained_detection_day": 2122,
+            "lead_days": -22
           },
           "IRNSS-1A": {
             "profile": "noise_increase",
             "anomaly_start_day": 2350,
-            "first_sustained_detection_day": 2375,
-            "lead_days": -25
+            "first_sustained_detection_day": 2380,
+            "lead_days": -30
           },
           "IRNSS-1G": {
             "profile": "degraded",
             "anomaly_start_day": 400,
-            "first_sustained_detection_day": 410,
-            "lead_days": -10
+            "first_sustained_detection_day": 414,
+            "lead_days": -14
           },
           "IRNSS-1D": {
             "profile": "degraded",
             "anomaly_start_day": 900,
-            "first_sustained_detection_day": 905,
-            "lead_days": -5
+            "first_sustained_detection_day": 914,
+            "lead_days": -14
           }
         }
       }

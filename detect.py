@@ -4,9 +4,14 @@ NavIC Pulse -- thresholding, severity and CUSUM detection.
 Two detectors run over the same anomaly scores:
 
   * A plain threshold, calibrated once on the HEALTHY TRAINING windows
-    (mean + K_SIGMA * std). Not per-satellite rolling statistics -- a rolling
-    baseline computed on a drifting satellite adapts to the drift and stops
-    seeing it.
+    (mean + K_SIGMA * std, K_SIGMA = 8 -- see config.py for why not 3). Not
+    per-satellite rolling statistics computed over every trailing window: such a
+    baseline, run on a drifting satellite, adapts to the drift and stops seeing
+    it. Measured in navic_recalibrate.py, a 90-day rolling mean + 3*sd catches
+    0 of 5 faulted units and drops late-onset recall to 0.009. Excluding the
+    windows the detector itself flagged from the trailing statistic repairs that
+    completely (late-onset recall back to 1.000), so rolling is workable if it is
+    ever wanted here -- it is simply not better than the static bar.
   * A CUSUM, which accumulates small persistent excesses instead of waiting for
     one window to clear the bar. This is what closes the gap on the three
     late-onset faults, whose per-window scores sit close to the healthy

@@ -33,16 +33,33 @@ The design choices that matter are the ones made against a first instinct:
 
 | metric | value |
 |---|---|
-| ROC AUC (threshold-free) | 0.9348 |
-| Precision / Recall / F1 (CUSUM, sustained) | 1.0000 / 0.8425 / 0.9145 |
-| False positives across 20,468 healthy windows | 0 |
+| ROC AUC (threshold-free) | 1.0000 |
+| Precision / Recall / F1 (CUSUM, sustained) | 1.0000 / 0.9920 / 0.9960 |
+| Precision / Recall / F1 (threshold, sustained) | 1.0000 / 0.9854 / 0.9927 |
+| False positives across 21,710 healthy windows | 0 |
 | Faults caught | 5 / 5 |
 | Healthy units falsely flagged | 0 / 5 |
-| Detection latency after onset | 5–25 days, on ramps of 100–300 days |
+| Detection latency after onset | 7–15 days, on ramps of 100–300 days |
 
-Recall of 0.84 is detection *latency*, not missed faults: the 60 windows a
-detection must accumulate are scored as misses even though every fault is
-eventually caught.
+The remaining 56 missed windows are detection *latency*, not missed faults: the
+60 windows a detection must accumulate are scored as misses even though every
+fault is eventually caught.
+
+These figures supersede an earlier ROC AUC of 0.9348 and recall of 0.8425. Two
+calibration changes account for the difference, neither of them a model change —
+the autoencoder and its seed are untouched:
+
+  * **Labels are now scored from each satellite's own `anomaly_start_day`.** The
+    two `degraded` units were previously labelled anomalous across their whole
+    record, because the generator multiplies their drift from day 0 and treats
+    `anomaly_start_day` as the knee where they worsen. That is still true of the
+    generator, but those 1,242 early windows score 0.160 against the healthy
+    fleet's 0.148 — indistinguishable — and they made up 100% of the pipeline's
+    false negatives. The old recall was measuring the labelling, not the
+    detector. See `preprocess.py`.
+  * **`K_SIGMA` moved from 3 to 8.** The healthy score distribution is
+    right-skewed, with a maximum 6.5σ above its own mean, so the 3σ bar sat
+    inside the healthy tail. See `config.py` and `navic_recalibrate.py`.
 
 Remaining useful life, projected at detection + 30 days:
 

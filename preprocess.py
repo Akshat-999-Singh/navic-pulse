@@ -9,6 +9,11 @@ Turns telemetry.csv into the arrays the autoencoder trains on:
   * Each satellite is cut into overlapping WINDOW-day windows, flattened to
     WINDOW * len(CHANNELS) features.
   * X_train is the healthy windows; X_all is every window.
+  * is_true_anomaly is set from each satellite's own anomaly_start_day, for
+    every profile. Degraded units were previously labelled anomalous across
+    their whole record; see the comment at the label construction for why that
+    was changed and what it cost. Training is unaffected either way -- the
+    scaler and X_train are selected by profile == "healthy", not by label.
 
 Outputs:
   preprocessed.npz     X_train, X_all, feature_names, train_mask
@@ -67,16 +72,18 @@ def main():
 
         end_days = sub["day"].to_numpy()[WINDOW - 1:]
         onset = sat["anomaly_start_day"]
-        if onset is None:
-            is_anomaly = np.zeros(len(end_days), dtype=bool)
-        elif sat["profile"] == "degraded":
-            # Degraded units carry elevated drift from day 0 by construction,
-            # so anomaly_start_day is the knee where they worsen, not the point
-            # they become faulty. Labelling their early windows healthy would
-            # score correct detections as false positives.
-            is_anomaly = np.ones(len(end_days), dtype=bool)
-        else:
-            is_anomaly = end_days >= onset
+        # Every profile is scored from its own anomaly_start_day. Degraded units
+        # used to be labelled anomalous for their whole record, on the grounds
+        # that build_drift_rate multiplies their drift by DEGRADED_DRIFT_MULT
+        # from day 0 and anomaly_start_day is only the knee where they worsen.
+        # That is still true of the generator, but it made 1,242 windows
+        # anomalous whose scores are indistinguishable from the healthy fleet
+        # (median 0.160 against 0.148), and they accounted for 100% of the
+        # pipeline's false negatives -- pinning recall at 0.86 while measuring
+        # the labelling rather than the detector. Scoring from the knee makes
+        # the label mean "detectably faulty", uniformly across profiles.
+        is_anomaly = (np.zeros(len(end_days), dtype=bool) if onset is None
+                      else end_days >= onset)
         meta_rows.append(pd.DataFrame({
             "satellite_id": sat["id"],
             "end_day": end_days,

@@ -1,0 +1,1504 @@
+<!doctype html>
+<html lang="en" data-palette="#35c7e0,#0ca30c,#fab219,#d03b3b">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NavIC Pulse — Clock Health Dashboard</title>
+<style>
+  :root {
+    color-scheme: dark;
+
+    /* surfaces */
+    --bg:            #0b0f1a;
+    --card:          #10151f;
+    --card-hover:    #141a26;
+    --plate:         #fcfcfb;   /* light plate the figures are mounted on */
+    --rule:          rgba(230, 233, 239, 0.10);
+    --rule-strong:   rgba(230, 233, 239, 0.18);
+
+    /* ink */
+    --ink:           #e6e9ef;
+    --ink-secondary: #9aa3b8;
+    --ink-muted:     #8b93a7;
+
+    /* the single accent */
+    --accent:        #35c7e0;
+
+    /* status (reserved — never used for anything but state) */
+    --good:          #0ca30c;
+    --good-text:     #3fd13f;
+    --warn:          #fab219;
+    --crit:          #d03b3b;
+    --crit-text:     #f0605f;
+
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1560px;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+
+  section { padding: 76px 0; border-top: 1px solid var(--rule); }
+  section:first-of-type { border-top: 0; }
+
+  /* ---------- section headings ---------- */
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  h2 {
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+  .lede {
+    margin: 0 0 40px;
+    color: var(--ink-secondary);
+    font-size: 18px;
+    max-width: 78ch;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    padding: 92px 0 68px;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(53, 199, 224, 0.38);
+    border-radius: 3px;
+    padding: 5px 11px;
+    margin-bottom: 26px;
+  }
+  h1 {
+    font-size: 68px;
+    line-height: 1.03;
+    font-weight: 650;
+    letter-spacing: -0.028em;
+    margin: 0 0 16px;
+  }
+  h1 .pulse { color: var(--accent); }
+  .subtitle {
+    font-size: 23px;
+    color: var(--ink-secondary);
+    margin: 0;
+    max-width: 60ch;
+    font-weight: 400;
+  }
+
+  /* ---------- stat cards ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 18px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 26px 24px 22px;
+    transition: border-color 160ms ease, background-color 160ms ease;
+  }
+  .stat:hover { border-color: var(--rule-strong); background: var(--card-hover); }
+  .stat .label {
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 14px;
+  }
+  .stat .value {
+    font-size: 46px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .stat .value .den {
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    letter-spacing: -0.01em;
+  }
+  .stat .note {
+    font-size: 14px;
+    color: var(--ink-secondary);
+    line-height: 1.4;
+  }
+  .stat.is-accent .value { color: var(--accent); }
+  /* tabular only mid-count, so the digits do not jitter; the resting
+     state keeps proportional figures */
+  .counting { font-variant-numeric: tabular-nums; }
+
+  /* ---------- constellation ---------- */
+  .fleet {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+    /* cards size to their own content, so expanding one does not stretch its
+       whole row and strand the neighbours' content at the bottom */
+    align-items: start;
+  }
+  .sat {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 22px 22px 20px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 200ms ease, border-color 200ms ease,
+                background-color 200ms ease, box-shadow 200ms ease;
+  }
+  .sat:hover { border-color: var(--rule-strong); background: var(--card-hover); transform: translateY(-3px); }
+  .sat:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* hover glow carries the card's own status colour */
+  .sat.st-nominal:hover {
+    border-color: rgba(12, 163, 12, 0.55);
+    box-shadow: 0 0 0 1px rgba(12, 163, 12, 0.22), 0 10px 28px -14px rgba(12, 163, 12, 0.7);
+  }
+  .sat.st-warning:hover {
+    border-color: rgba(250, 178, 25, 0.55);
+    box-shadow: 0 0 0 1px rgba(250, 178, 25, 0.22), 0 10px 28px -14px rgba(250, 178, 25, 0.7);
+  }
+  .sat.st-critical:hover {
+    border-color: rgba(240, 96, 95, 0.6);
+    box-shadow: 0 0 0 1px rgba(240, 96, 95, 0.26), 0 10px 28px -14px rgba(240, 96, 95, 0.75);
+  }
+
+  /* ---------- expandable detail (0fr → 1fr animates to auto height) ---------- */
+  .sat-more {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    transition: color 180ms ease;
+  }
+  .sat:hover .sat-more { color: var(--ink-secondary); }
+  .sat-more .chev { transition: transform 260ms ease; line-height: 1; }
+  .sat.open .sat-more .chev { transform: rotate(180deg); }
+
+  .sat-detail {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 280ms ease, opacity 200ms ease;
+  }
+  .sat.open .sat-detail { grid-template-rows: 1fr; opacity: 1; }
+  .sd-in { overflow: hidden; }
+  .sd-block { margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--rule); }
+  .sd-k {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 5px;
+  }
+  .sd-v { font-size: 13.5px; line-height: 1.5; color: var(--ink-secondary); }
+  .sd-v b { color: var(--ink); font-weight: 600; }
+  .sd-v sup { font-size: 0.75em; line-height: 0; }
+
+  /* ---------- filter pills ---------- */
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+  .fbtn {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--ink-secondary);
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: 100px;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
+  }
+  .fbtn:hover { color: var(--ink); border-color: var(--rule-strong); }
+  .fbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .fbtn[aria-pressed="true"] {
+    color: #06121a;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .fbtn .c { opacity: 0.62; font-weight: 500; margin-left: 6px; }
+  .sat.is-hidden { display: none; }
+
+  /* ---------- critical dot pulse (critical only) ---------- */
+  @keyframes critpulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(240, 96, 95, 0.5); }
+    55%      { box-shadow: 0 0 0 4px rgba(240, 96, 95, 0); }
+  }
+  .pill.critical .dot { animation: critpulse 2.6s ease-in-out infinite; }
+
+  /* ---------- scroll reveal (class added by JS, so no-JS stays visible) ---------- */
+  .reveal { opacity: 0; transform: translateY(12px); }
+  .reveal.revealed {
+    opacity: 1;
+    transform: none;
+    transition: opacity 400ms ease, transform 400ms ease;
+  }
+
+  /* ---------- figure lightbox ---------- */
+  .plate img { cursor: zoom-in; }
+  .lb {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(5, 8, 14, 0.94);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 40px;
+    cursor: zoom-out;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .lb.on { opacity: 1; }
+  .lb[hidden] { display: none; }
+  .lb img {
+    max-width: 100%;
+    max-height: calc(100vh - 170px);
+    background: var(--plate);
+    border-radius: 6px;
+    padding: 14px;
+    box-sizing: border-box;
+  }
+  .lb-cap {
+    margin: 0;
+    max-width: 90ch;
+    text-align: center;
+    font-size: 15.5px;
+    color: var(--ink-secondary);
+  }
+  .lb-x {
+    position: absolute;
+    top: 22px;
+    right: 26px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-secondary);
+    background: transparent;
+    border: 1px solid var(--rule-strong);
+    border-radius: 100px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: color 180ms ease, border-color 180ms ease;
+  }
+  .lb-x:hover { color: var(--ink); border-color: var(--ink-secondary); }
+
+  /* ---------- reduced motion: cut all of it ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+    .sat:hover { transform: none; }
+    .reveal { opacity: 1; transform: none; }
+  }
+
+  .sat-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .sat-name {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .sat-clock {
+    font-size: 13px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 18px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .pill .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex: none;
+  }
+  .pill.nominal  { color: var(--good-text); background: rgba(12, 163, 12, 0.13);  border: 1px solid rgba(12, 163, 12, 0.42); }
+  .pill.nominal  .dot { background: var(--good-text); }
+  .pill.warning  { color: var(--warn);      background: rgba(250, 178, 25, 0.13); border: 1px solid rgba(250, 178, 25, 0.42); }
+  .pill.warning  .dot { background: var(--warn); }
+  .pill.critical { color: var(--crit-text); background: rgba(208, 59, 59, 0.16);  border: 1px solid rgba(208, 59, 59, 0.50); }
+  .pill.critical .dot { background: var(--crit-text); }
+
+  /* stacked rows — the qualified labels are too long for a two-column row */
+  .rows { margin-top: auto; }
+  .row { padding: 10px 0; border-top: 1px solid var(--rule); }
+  .row .k {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+  .row .k .q {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    opacity: 0.78;
+  }
+  .row .v { font-size: 16px; color: var(--ink); }
+  .row .v.dim { color: var(--ink-secondary); }
+  .row .v .sub { font-size: 13px; color: var(--ink-muted); }
+  .rul { font-size: 19px; font-weight: 600; }
+  .rul .pm { color: var(--ink-muted); font-weight: 400; font-size: 15px; }
+
+  /* ---------- three-stage timeline strip ---------- */
+  .tk { margin-top: 18px; }
+  .tk-top { position: relative; height: 16px; }
+  .tk-now-l {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+  .tk-wrap { position: relative; }
+  .tk-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: rgba(230, 233, 239, 0.07);
+    overflow: hidden;
+  }
+  .tk-bar > span { position: absolute; top: 0; height: 100%; }
+  .tk-h { left: 0; background: rgba(12, 163, 12, 0.50); }      /* healthy */
+  .tk-d { background: rgba(250, 178, 25, 0.80); }              /* degrading, observed */
+  .tk-p {                                                      /* ahead — projected */
+    background: repeating-linear-gradient(90deg,
+      rgba(250, 178, 25, 0.34) 0 5px, transparent 5px 10px);
+  }
+  .tk-f { right: 0; width: 4px; background: var(--crit-text); }/* failure limit */
+
+  /* markers ride above the clipped bar so they can overhang it */
+  .tk-mk { position: absolute; inset: 0; }
+  .tk-mk > span { position: absolute; transform: translateX(-50%); }
+  .tk-det {
+    top: -2px; width: 2px; height: 14px;
+    background: var(--ink); border-radius: 1px;
+    box-shadow: 0 0 0 1.5px var(--card);
+  }
+  .tk-cur {
+    top: -1px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2.5px var(--card);
+  }
+
+  /* shared legend for the strip */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px 22px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .lg { display: inline-flex; align-items: center; gap: 7px; }
+  .lg .sw { width: 22px; height: 8px; border-radius: 4px; flex: none; }
+  .lg .sw.tick { width: 2px; height: 13px; border-radius: 1px; background: var(--ink); }
+  .lg .sw.cur  { width: 11px; height: 11px; border-radius: 50%; background: var(--accent); }
+
+  /* ---------- status vs remaining-life explainer ---------- */
+  .explainer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 56px;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 28px 32px;
+    margin-bottom: 30px;
+  }
+  .ex-h {
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .ex-lead {
+    margin: 0 0 7px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+  .ex-sub { margin: 0; font-size: 15.5px; color: var(--ink-secondary); }
+  .ex-bands { display: flex; flex-wrap: wrap; gap: 9px 22px; margin-top: 16px; }
+  .band {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--ink-secondary);
+  }
+  .band .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .band .n { color: var(--ink); font-weight: 600; }
+  .ex-note {
+    grid-column: 1 / -1;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .ex-note b { color: var(--accent); font-weight: 600; }
+
+  .grid-note {
+    margin-top: 24px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    max-width: 108ch;
+  }
+
+  /* ---------- figures ---------- */
+  .figs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 34px 28px;
+  }
+  /* figures stretch to a common height so captions in a row share a baseline;
+     the shorter figure centres inside its plate — white on white, invisible. */
+  figure { margin: 0; display: flex; flex-direction: column; height: 100%; }
+  .plate {
+    background: var(--plate);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px;
+    line-height: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .plate img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 3px;
+  }
+  figcaption {
+    margin-top: 14px;
+    font-size: 15.5px;
+    line-height: 1.5;
+    color: var(--ink-secondary);
+  }
+  figcaption b {
+    color: var(--ink);
+    font-weight: 600;
+    display: block;
+    font-size: 16.5px;
+    margin-bottom: 3px;
+  }
+  figcaption .hl { color: var(--accent); font-weight: 600; }
+
+  /* ---------- pipeline ---------- */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+  }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 22px;
+    position: relative;
+  }
+  .step .n {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .step h3 {
+    font-size: 17.5px;
+    font-weight: 600;
+    margin: 0 0 7px;
+    letter-spacing: -0.005em;
+  }
+  .step p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.5;
+    color: var(--ink-secondary);
+  }
+
+  /* ---------- limits ---------- */
+  .limits {
+    border-left: 2px solid var(--rule-strong);
+    padding-left: 26px;
+    max-width: 96ch;
+  }
+  .limits li {
+    color: var(--ink-muted);
+    font-size: 16px;
+    line-height: 1.62;
+    margin-bottom: 13px;
+  }
+  .limits li:last-child { margin-bottom: 0; }
+  .limits li b { color: var(--ink-secondary); font-weight: 600; }
+  .limits ul { margin: 0; padding-left: 20px; }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 40px 0 64px;
+    font-size: 15px;
+    color: var(--ink-muted);
+  }
+  footer .wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1400px) {
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .fleet { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 1080px) {
+    .wrap { padding: 0 28px; }
+    h1 { font-size: 50px; }
+    .fleet { grid-template-columns: repeat(2, 1fr); }
+    .steps { grid-template-columns: repeat(2, 1fr); }
+    .figs  { grid-template-columns: 1fr; }
+    .explainer { grid-template-columns: 1fr; gap: 30px; }
+    .ex-note { margin-top: 0; }
+  }
+  @media (max-width: 680px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .fleet, .steps { grid-template-columns: 1fr; }
+    h1 { font-size: 38px; }
+    .subtitle { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<header>
+  <div class="wrap">
+    <div class="tag">SIH PS 26209</div>
+    <h1>NavIC&nbsp;<span class="pulse">Pulse</span></h1>
+    <p class="subtitle">AI-based satellite clock health monitoring &amp; remaining-life prognosis</p>
+  </div>
+</header>
+
+<!-- ==================== CONSTELLATION ==================== -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Constellation</p>
+    <h2>Ten clocks, current state</h2>
+
+    <!-- the question judges always ask, answered before it is asked -->
+    <div class="explainer">
+      <div>
+        <div class="ex-h">Status</div>
+        <p class="ex-lead">How abnormal the telemetry looks today.</p>
+        <p class="ex-sub">From the final 30-day window&#39;s reconstruction error.</p>
+        <div class="ex-bands">
+          <span class="band"><span class="dot" style="background:var(--good-text)"></span><span class="n">Nominal</span> below 0.282</span>
+          <span class="band"><span class="dot" style="background:var(--warn)"></span><span class="n">Warning</span> above 0.282</span>
+          <span class="band"><span class="dot" style="background:var(--crit-text)"></span><span class="n">Critical</span> above 79.76</span>
+        </div>
+      </div>
+      <div>
+        <div class="ex-h">Remaining life</div>
+        <p class="ex-lead">How fast it&#39;s heading toward failure.</p>
+        <p class="ex-sub">Projected from the RAFS signal-level decline to the 0.85 limit.</p>
+      </div>
+      <p class="ex-note">
+        <b>These are independent measurements.</b> A clock can look highly abnormal yet decline
+        slowly, or look moderately abnormal and decline fast. Operators need both: status sets
+        investigation priority, remaining life sets maintenance schedule.
+      </p>
+    </div>
+
+    <div class="filters" role="group" aria-label="Filter satellites">
+      <button class="fbtn" type="button" data-filter="all" aria-pressed="true">All <span class="c">10</span></button>
+      <button class="fbtn" type="button" data-filter="faulted" aria-pressed="false">Faulted <span class="c">5</span></button>
+      <button class="fbtn" type="button" data-filter="healthy" aria-pressed="false">Healthy <span class="c">5</span></button>
+      <button class="fbtn" type="button" data-filter="imported" aria-pressed="false">Imported <span class="c">8</span></button>
+      <button class="fbtn" type="button" data-filter="indigenous" aria-pressed="false">Indigenous <span class="c">2</span></button>
+    </div>
+
+    <div class="legend">
+      <span class="lg"><span class="sw" style="background:rgba(12,163,12,0.50)"></span>healthy</span>
+      <span class="lg"><span class="sw" style="background:rgba(250,178,25,0.80)"></span>degrading (observed)</span>
+      <span class="lg"><span class="sw" style="background:repeating-linear-gradient(90deg,rgba(250,178,25,0.34) 0 5px,transparent 5px 10px)"></span>projected</span>
+      <span class="lg"><span class="sw tick"></span>detected</span>
+      <span class="lg"><span class="sw cur"></span>now</span>
+      <span class="lg"><span class="sw" style="width:4px;background:var(--crit-text)"></span>failure limit (0.85)</span>
+    </div>
+
+    <div class="fleet">
+
+      <div class="sat st-critical" data-state="faulted" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1D</span>
+          <span class="pill critical"><span class="dot"></span>Critical</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">Degraded <span class="sub">&middot; onset day 900</span></span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 907 <span class="sub">&middot; 7-day latency</span></span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">53 <span class="pm">&plusmn; 2 d</span></span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy to day 900, degrading since; detected day 907; now day 937; projected to reach the failure limit at day 990.">
+          <div class="tk-top"><span class="tk-now-l" style="left:48.8%">now &middot; d937</span></div>
+          <div class="tk-wrap">
+            <div class="tk-bar">
+              <span class="tk-h" style="width:13.0%"></span>
+              <span class="tk-d" style="left:13.0%; width:35.8%"></span>
+              <span class="tk-p" style="left:48.8%; width:51.2%"></span>
+              <span class="tk-f"></span>
+            </div>
+            <div class="tk-mk">
+              <span class="tk-det" style="left:19.8%"></span>
+              <span class="tk-cur" style="left:48.8%"></span>
+            </div>
+          </div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">Long-running degradation. The clock has been sliding out of spec since early in the mission, so by the time it is flagged it has already been unhealthy for a long stretch.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−1.00 &times; 10<sup>−3</sup> per day</b>, fitted over the 90-day window ending day 937. Extended at that rate, the fit crosses the 0.85 failure limit on day 990.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Onset day 900, declared day 907 — <b>7 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-warning" data-state="faulted" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1G</span>
+          <span class="pill warning"><span class="dot"></span>Warning</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">Degraded <span class="sub">&middot; onset day 400</span></span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 412 <span class="sub">&middot; 12-day latency</span></span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">50 <span class="pm">&plusmn; 2 d</span></span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy to day 400, degrading since; detected day 412; now day 442; projected to reach the failure limit at day 492.">
+          <div class="tk-top"><span class="tk-now-l" style="left:52.7%">now &middot; d442</span></div>
+          <div class="tk-wrap">
+            <div class="tk-bar">
+              <span class="tk-h" style="width:13.0%"></span>
+              <span class="tk-d" style="left:13.0%; width:39.7%"></span>
+              <span class="tk-p" style="left:52.7%; width:47.3%"></span>
+              <span class="tk-f"></span>
+            </div>
+            <div class="tk-mk">
+              <span class="tk-det" style="left:24.4%"></span>
+              <span class="tk-cur" style="left:52.7%"></span>
+            </div>
+          </div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">Long-running degradation. The clock has been sliding out of spec since early in the mission, so by the time it is flagged it has already been unhealthy for a long stretch.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−9.73 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 442. Extended at that rate, the fit crosses the 0.85 failure limit on day 492.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Onset day 400, declared day 412 — <b>12 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-warning" data-state="faulted" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1I</span>
+          <span class="pill warning"><span class="dot"></span>Warning</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">Slow drift <span class="sub">&middot; onset day 1750</span></span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 1765 <span class="sub">&middot; 15-day latency</span></span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">93 <span class="pm">&plusmn; 3 d</span></span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy to day 1750, degrading since; detected day 1765; now day 1795; projected to reach the failure limit at day 1888.">
+          <div class="tk-top"><span class="tk-now-l" style="left:41.4%">now &middot; d1795</span></div>
+          <div class="tk-wrap">
+            <div class="tk-bar">
+              <span class="tk-h" style="width:13.0%"></span>
+              <span class="tk-d" style="left:13.0%; width:28.4%"></span>
+              <span class="tk-p" style="left:41.4%; width:58.6%"></span>
+              <span class="tk-f"></span>
+            </div>
+            <div class="tk-mk">
+              <span class="tk-det" style="left:22.5%"></span>
+              <span class="tk-cur" style="left:41.4%"></span>
+            </div>
+          </div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">A gradual frequency drift that accumulates over months rather than appearing in a single step. The hardest of the four to catch early, because no one day looks wrong.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−7.54 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 1795. Extended at that rate, the fit crosses the 0.85 failure limit on day 1888.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Onset day 1750, declared day 1765 — <b>15 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-warning" data-state="faulted" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1A</span>
+          <span class="pill warning"><span class="dot"></span>Warning</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">Noise increase <span class="sub">&middot; onset day 2350</span></span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 2364 <span class="sub">&middot; 14-day latency</span></span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">151 <span class="pm">&plusmn; 6 d</span></span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy to day 2350, degrading since; detected day 2364; now day 2394; projected to reach the failure limit at day 2545.">
+          <div class="tk-top"><span class="tk-now-l" style="left:32.7%">now &middot; d2394</span></div>
+          <div class="tk-wrap">
+            <div class="tk-bar">
+              <span class="tk-h" style="width:13.0%"></span>
+              <span class="tk-d" style="left:13.0%; width:19.7%"></span>
+              <span class="tk-p" style="left:32.7%; width:67.3%"></span>
+              <span class="tk-f"></span>
+            </div>
+            <div class="tk-mk">
+              <span class="tk-det" style="left:19.3%"></span>
+              <span class="tk-cur" style="left:32.7%"></span>
+            </div>
+          </div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">Short-term stability collapses: the noise floor rises roughly fourfold while mean frequency stays put, so averages look fine and scatter does not.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−5.91 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 2394. Extended at that rate, the fit crosses the 0.85 failure limit on day 2545.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Onset day 2350, declared day 2364 — <b>14 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — IRNSS-1A lost all three of its atomic clocks on orbit in 2016, which is why it carries a failure profile here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-warning" data-state="faulted" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1E</span>
+          <span class="pill warning"><span class="dot"></span>Warning</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">Sudden jump <span class="sub">&middot; onset day 2100</span></span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v">Day 2108 <span class="sub">&middot; 8-day latency</span></span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v rul">208 <span class="pm">&plusmn; 8 d</span></span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy to day 2100, degrading since; detected day 2108; now day 2138; projected to reach the failure limit at day 2346.">
+          <div class="tk-top"><span class="tk-now-l" style="left:26.5%">now &middot; d2138</span></div>
+          <div class="tk-wrap">
+            <div class="tk-bar">
+              <span class="tk-h" style="width:13.0%"></span>
+              <span class="tk-d" style="left:13.0%; width:13.5%"></span>
+              <span class="tk-p" style="left:26.5%; width:73.5%"></span>
+              <span class="tk-f"></span>
+            </div>
+            <div class="tk-mk">
+              <span class="tk-det" style="left:15.9%"></span>
+              <span class="tk-cur" style="left:26.5%"></span>
+            </div>
+          </div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">An abrupt step in frequency offset. The clock re-settles and keeps running, but at a new and wrong rate.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−4.88 &times; 10<sup>−4</sup> per day</b>, fitted over the 90-day window ending day 2138. Extended at that rate, the fit crosses the 0.85 failure limit on day 2346.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Onset day 2100, declared day 2108 — <b>8 days</b>. CUSUM waits for 60 consecutive alarm windows before it declares anything; that wait is what holds false alarms at zero.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-nominal" data-state="healthy" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1B</span>
+          <span class="pill nominal"><span class="dot"></span>Nominal</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">No declining trend</span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
+          <div class="tk-top"></div>
+          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>+5.74 &times; 10<sup>−7</sup> per day</b> — flat within noise, and not negative, so there is no decline to project.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-nominal" data-state="healthy" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1C</span>
+          <span class="pill nominal"><span class="dot"></span>Nominal</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">Beyond horizon</span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
+          <div class="tk-top"></div>
+          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−1.43 &times; 10<sup>−6</sup> per day</b> — declining so slowly that the fit reaches 0.85 well past the 3,650-day horizon.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-nominal" data-state="healthy" data-clock="imported"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">IRNSS-1F</span>
+          <span class="pill nominal"><span class="dot"></span>Nominal</span>
+        </div>
+        <div class="sat-clock">Imported</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">No declining trend</span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
+          <div class="tk-top"></div>
+          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>+2.21 &times; 10<sup>−5</sup> per day</b> — flat within noise, and not negative, so there is no decline to project.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Imported rubidium standard — the clock class behind the on-orbit failures that motivated the indigenous programme.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-nominal" data-state="healthy" data-clock="indigenous"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">NVS-01</span>
+          <span class="pill nominal"><span class="dot"></span>Nominal</span>
+        </div>
+        <div class="sat-clock">Indigenous</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">Beyond horizon</span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
+          <div class="tk-top"></div>
+          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−6.66 &times; 10<sup>−6</sup> per day</b> — declining so slowly that the fit reaches 0.85 well past the 3,650-day horizon.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Indigenous iRAFS, ISRO-built — the replacement line flown on the NVS series.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sat st-nominal" data-state="healthy" data-clock="indigenous"
+           role="button" tabindex="0" aria-expanded="false">
+        <div class="sat-top">
+          <span class="sat-name">NVS-02</span>
+          <span class="pill nominal"><span class="dot"></span>Nominal</span>
+        </div>
+        <div class="sat-clock">Indigenous</div>
+        <div class="rows">
+          <div class="row"><span class="k">Fault</span><span class="v dim">None</span></div>
+          <div class="row"><span class="k">Detected <span class="q">(entered degraded state)</span></span><span class="v dim">&mdash;</span></div>
+          <div class="row"><span class="k">Remaining life <span class="q">(until unusable)</span></span><span class="v dim">Beyond horizon</span></div>
+        </div>
+        <div class="tk" role="img" aria-label="Healthy across the full mission; no degradation detected.">
+          <div class="tk-top"></div>
+          <div class="tk-wrap"><div class="tk-bar"><span class="tk-h" style="width:100%"></span></div></div>
+        </div>
+        <div class="sat-more"><span class="chev">&#9662;</span> details</div>
+        <div class="sat-detail">
+          <div class="sd-in">
+            <div class="sd-block">
+              <div class="sd-k">Fault profile</div>
+              <div class="sd-v">No fault injected. Telemetry stays inside the healthy envelope for all 2,900 days.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Fitted decline</div>
+              <div class="sd-v"><b>−3.35 &times; 10<sup>−5</sup> per day</b> — declining so slowly that the fit reaches 0.85 well past the 3,650-day horizon.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Why that latency</div>
+              <div class="sd-v">Never declared. No run of 60 consecutive alarm windows occurred in 2,900 days of telemetry.</div>
+            </div>
+            <div class="sd-block">
+              <div class="sd-k">Clock provenance</div>
+              <div class="sd-v">Indigenous iRAFS, ISRO-built — the replacement line flown on the NVS series.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="grid-note">
+      Severity bands are set at the 60th percentile of flagged scores, so satellites of similar
+      health can fall on opposite sides of a band boundary. IRNSS-1D and IRNSS-1G differ by 3 days
+      of remaining life &mdash; within noise.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== HEADLINE METRICS ==================== -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Detector performance</p>
+    <h2>Every fault caught. No false alarms.</h2>
+    <p class="lede">
+      Autoencoder reconstruction error with CUSUM persistence, evaluated over 28,710
+      thirty-day windows across ten satellites.
+    </p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="label">Precision</div>
+        <div class="value"><span data-count="1.0000" data-dec="4">1.0000</span></div>
+        <div class="note">6,944 true positives,<br>zero false positives</div>
+      </div>
+      <div class="stat">
+        <div class="label">Recall</div>
+        <div class="value"><span data-count="0.8425" data-dec="4">0.8425</span></div>
+        <div class="note">6,944 of 8,242<br>anomalous windows</div>
+      </div>
+      <div class="stat">
+        <div class="label">F1</div>
+        <div class="value"><span data-count="0.9145" data-dec="4">0.9145</span></div>
+        <div class="note">window level,<br>CUSUM detector</div>
+      </div>
+      <div class="stat">
+        <div class="label">ROC AUC</div>
+        <div class="value"><span data-count="0.9348" data-dec="4">0.9348</span></div>
+        <div class="note">ranking quality of the<br>raw anomaly score</div>
+      </div>
+      <div class="stat is-accent">
+        <div class="label">Faults caught</div>
+        <div class="value"><span data-count="5" data-dec="0">5</span><span class="den"> / 5</span></div>
+        <div class="note">all faulted satellites<br>detected within 15 days</div>
+      </div>
+      <div class="stat is-accent">
+        <div class="label">False alarms</div>
+        <div class="value">0</div>
+        <div class="note">across 20,468 healthy<br>windows · 5 healthy units</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FIGURES ==================== -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Evidence</p>
+    <h2>What the model actually sees</h2>
+    <p class="lede">
+      Four figures generated directly from the pipeline output — detection, separation,
+      prognosis, and the raw telemetry underneath it all.
+    </p>
+
+    <div class="figs">
+
+      <figure>
+        <div class="plate"><img src="anomaly_timeline.png" alt="Anomaly score against day for IRNSS-1I, showing the threshold, the fault onset at day 1750 and the sustained detection at day 1765."></div>
+        <figcaption>
+          <b>Anomaly timeline — IRNSS-1I</b>
+          Reconstruction error climbs off the healthy floor at fault onset and stays above
+          threshold, giving a sustained detection <span class="hl">15 days after onset</span>.
+        </figcaption>
+      </figure>
+
+      <figure>
+        <div class="plate"><img src="score_histogram.png" alt="Log-scale histogram of anomaly scores for healthy versus anomalous windows, showing two near-disjoint distributions."></div>
+        <figcaption>
+          <b>Score separation</b>
+          Healthy and anomalous windows sit on opposite ends of a log axis —
+          <span class="hl">371× separation in mean score</span> (0.163 against 60.7), which is
+          why precision holds at 1.0000.
+        </figcaption>
+      </figure>
+
+      <figure>
+        <div class="plate"><img src="rul_projection.png" alt="RAFS signal level declining for IRNSS-1I with a fitted trend line projected to the 0.85 failure limit at 93 days."></div>
+        <figcaption>
+          <b>Remaining-life projection — IRNSS-1I</b>
+          The fitted signal-level decline reaches the 0.85 failure limit in
+          <span class="hl">93 ± 3 days</span>. The green plateau is the projection's honest
+          limit: the observed decline flattens near 0.91 and never crosses, so this answers
+          "if the current rate held", not "this clock will fail".
+        </figcaption>
+      </figure>
+
+      <figure>
+        <div class="plate"><img src="raw_check.png" alt="Six raw telemetry channels plotted side by side for healthy IRNSS-1C and drifting IRNSS-1I."></div>
+        <figcaption>
+          <b>Raw telemetry check</b>
+          Six channels, healthy IRNSS-1C against drifting IRNSS-1I. The RAFS signal level
+          breaks from its healthy band <span class="hl">at onset — roughly 170 days before
+          the frequency offset does</span>, which is why signal level drives the RUL fit.
+        </figcaption>
+      </figure>
+
+    </div>
+  </div>
+</section>
+
+<!-- ==================== HOW IT WORKS ==================== -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Method</p>
+    <h2>How it works</h2>
+    <p class="lede">Five stages, from published specification to a number an operator can plan against.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="n">01</div>
+        <h3>Synthetic telemetry</h3>
+        <p>Five channels over 2,900 days, generated from ISRO's published iRAFS specification and its four measured failure signatures.</p>
+      </div>
+      <div class="step">
+        <div class="n">02</div>
+        <h3>30-day windows</h3>
+        <p>Scaler fitted on healthy data only, then sliced into 28,710 overlapping thirty-day windows — 150 features each.</p>
+      </div>
+      <div class="step">
+        <div class="n">03</div>
+        <h3>Autoencoder</h3>
+        <p>A 150 → 64 → 12 → 64 → 150 MLP trained on healthy windows alone, so anything abnormal reconstructs badly.</p>
+      </div>
+      <div class="step">
+        <div class="n">04</div>
+        <h3>Detection</h3>
+        <p>Per-window reconstruction error against a 3σ threshold, confirmed by 60 consecutive alarm windows before a fault is declared.</p>
+      </div>
+      <div class="step">
+        <div class="n">05</div>
+        <h3>Prognosis</h3>
+        <p>A 90-day trend on RAFS signal level, extrapolated to the 0.85 failure limit with a fit-derived error bar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== HONEST LIMITS ==================== -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Caveats</p>
+    <h2>Honest limits</h2>
+    <div class="limits">
+      <ul>
+        <li><b>The dataset is synthetic.</b> Failure magnitudes come from the published iRAFS record; everything else is modelled. Real IRNSS clock data, identified via IGS MGEX, is the validation path.</li>
+        <li><b>RUL assumes the current decline rate continues.</b> The error bars are model-fit precision, not accuracy — the generated decline plateaus near 0.91 and never reaches the failure limit.</li>
+        <li><b>The persistence constant is calibrated on five healthy units.</b> CUSUM_PERSISTENCE = 60 is where healthy units go quiet on <em>this</em> dataset — demo-grade calibration, not an operationally justified value.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer>
+  <div class="wrap">
+    <span>NavIC Pulse · Smart India Hackathon · PS 26209</span>
+    <a href="https://github.com/Akshat-999-Singh/navic-pulse">github.com/Akshat-999-Singh/navic-pulse</a>
+  </div>
+</footer>
+
+<!-- ==================== LIGHTBOX ==================== -->
+<div class="lb" hidden role="dialog" aria-modal="true" aria-label="Figure viewer">
+  <button class="lb-x" type="button">Close &middot; Esc</button>
+  <img alt="">
+  <p class="lb-cap"></p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduced = window.matchMedia &&
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var canAnimate = !reduced && typeof Element.prototype.animate === "function";
+  var slice = function (n) { return Array.prototype.slice.call(n); };
+
+  /* ---------------- expandable satellite cards ---------------- */
+  slice(document.querySelectorAll(".sat")).forEach(function (card) {
+    function toggle() {
+      var open = card.classList.toggle("open");
+      card.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    card.addEventListener("click", toggle);
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+    });
+  });
+
+  /* ---------------- filter pills ----------------
+     Leaving cards fade out first, then the survivors FLIP into their new
+     slots and any newcomers fade in. */
+  var fleet = document.querySelector(".fleet");
+  var buttons = slice(document.querySelectorAll(".fbtn"));
+  var cards = fleet ? slice(fleet.querySelectorAll(".sat")) : [];
+
+  function matches(card, key) {
+    return key === "all" ||
+           card.getAttribute("data-state") === key ||
+           card.getAttribute("data-clock") === key;
+  }
+
+  function commit(key, before) {
+    cards.forEach(function (c) {
+      if (matches(c, key)) { c.classList.remove("is-hidden"); }
+      else { c.classList.add("is-hidden"); }
+    });
+    if (!canAnimate) { return; }
+    cards.forEach(function (c) {
+      if (c.classList.contains("is-hidden")) { return; }
+      var first = before.get(c);
+      var last = c.getBoundingClientRect();
+      if (!first) {
+        c.animate([{ opacity: 0, transform: "scale(.97)" },
+                   { opacity: 1, transform: "none" }],
+                  { duration: 240, easing: "ease" });
+        return;
+      }
+      var dx = first.left - last.left;
+      var dy = first.top - last.top;
+      if (!dx && !dy) { return; }
+      c.animate([{ transform: "translate(" + dx + "px," + dy + "px)" },
+                 { transform: "none" }],
+                { duration: 300, easing: "cubic-bezier(.2,.7,.3,1)" });
+    });
+  }
+
+  function setFilter(key) {
+    buttons.forEach(function (b) {
+      b.setAttribute("aria-pressed",
+        b.getAttribute("data-filter") === key ? "true" : "false");
+    });
+    var before = new Map();
+    cards.forEach(function (c) {
+      if (!c.classList.contains("is-hidden")) {
+        before.set(c, c.getBoundingClientRect());
+      }
+    });
+    var leaving = cards.filter(function (c) {
+      return !c.classList.contains("is-hidden") && !matches(c, key);
+    });
+    if (!canAnimate || !leaving.length) { commit(key, before); return; }
+    var done = 0;
+    leaving.forEach(function (c) {
+      var a = c.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.97)" }],
+                        { duration: 150, easing: "ease" });
+      a.onfinish = function () {
+        if (++done === leaving.length) { commit(key, before); }
+      };
+    });
+  }
+
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () {
+      setFilter(b.getAttribute("data-filter"));
+    });
+  });
+
+  /* ---------------- count-up on the metric values ---------------- */
+  var counters = slice(document.querySelectorAll("[data-count]"));
+
+  function fmt(el, v) {
+    return v.toFixed(parseInt(el.getAttribute("data-dec") || "0", 10));
+  }
+
+  function runCount(el) {
+    var target = parseFloat(el.getAttribute("data-count"));
+    if (reduced) { el.textContent = fmt(el, target); return; }
+    var start = null, dur = 800;
+    el.classList.add("counting");
+    requestAnimationFrame(function step(ts) {
+      if (start === null) { start = ts; }
+      var p = Math.min((ts - start) / dur, 1);
+      el.textContent = fmt(el, target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) { requestAnimationFrame(step); }
+      else { el.textContent = fmt(el, target); el.classList.remove("counting"); }
+    });
+  }
+
+  /* ---------------- scroll reveal + count trigger ----------------
+     .reveal is added by script, so with JS off nothing is ever hidden. */
+  var sections = slice(document.querySelectorAll("section"));
+
+  if (!reduced && window.IntersectionObserver) {
+    var io = new IntersectionObserver(function (entries, obs) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) { return; }
+        obs.unobserve(en.target);
+        if (en.target.hasAttribute("data-count")) { runCount(en.target); }
+        else { en.target.classList.add("revealed"); }
+      });
+    }, { threshold: 0, rootMargin: "0px 0px -60px 0px" });
+
+    sections.forEach(function (s) { s.classList.add("reveal"); io.observe(s); });
+    counters.forEach(function (c) {
+      c.textContent = fmt(c, 0);   /* park at zero before it scrolls into view */
+      io.observe(c);
+    });
+  }
+
+  /* ---------------- figure lightbox ---------------- */
+  var lb = document.querySelector(".lb");
+  var lbImg = lb.querySelector("img");
+  var lbCap = lb.querySelector(".lb-cap");
+  var lbX = lb.querySelector(".lb-x");
+  var lastFocus = null;
+
+  function openLb(img) {
+    lastFocus = img;
+    lbImg.setAttribute("src", img.getAttribute("src"));
+    lbImg.setAttribute("alt", img.getAttribute("alt") || "");
+    var fig = img.parentNode.parentNode;
+    var cap = fig ? fig.querySelector("figcaption b") : null;
+    lbCap.textContent = cap ? cap.textContent : "";
+    lb.hidden = false;
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(function () { lb.classList.add("on"); });
+    lbX.focus();
+  }
+
+  function closeLb() {
+    lb.classList.remove("on");
+    var finish = function () {
+      lb.hidden = true;
+      lbImg.removeAttribute("src");
+    };
+    if (reduced) { finish(); } else { setTimeout(finish, 200); }
+    document.body.style.overflow = "";
+    if (lastFocus) { lastFocus.focus(); }
+  }
+
+  slice(document.querySelectorAll(".plate img")).forEach(function (img) {
+    img.setAttribute("role", "button");
+    img.setAttribute("tabindex", "0");
+    img.addEventListener("click", function () { openLb(img); });
+    img.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLb(img); }
+    });
+  });
+
+  lb.addEventListener("click", closeLb);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !lb.hidden) { closeLb(); }
+  });
+}());
+</script>
+
+</body>
+</html>
