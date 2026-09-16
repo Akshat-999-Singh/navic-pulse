@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Constellation from './Constellation.jsx'
 import Pipeline from './Pipeline.jsx'
 import Satellite from './Satellite.jsx'
@@ -18,6 +18,29 @@ const IDLE = { status: 'idle', fileName: null, startedAt: null }
 function formatGenerated(iso) {
   const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/.exec(iso ?? '')
   return match ? `${match[1]} ${match[2]} UTC` : (iso ?? '—')
+}
+
+// Everything above the views: banner, masthead, run status. Their summed
+// height is published as --chrome-height, which the scene column's sticky
+// offset reads, so the scene holds its position whatever wraps.
+function useChromeHeight() {
+  useEffect(() => {
+    const root = document.documentElement
+    const parts = () => [...document.querySelectorAll('.banner, .masthead, .run-status')]
+    const publish = () => {
+      const height = parts().reduce((sum, el) => sum + el.getBoundingClientRect().height, 0)
+      // Exact, not rounded: a subpixel over the in-flow position lets the
+      // column's end nudge the scene at the bottom of the page.
+      root.style.setProperty('--chrome-height', `${height.toFixed(2)}px`)
+    }
+    const observer = new ResizeObserver(publish)
+    parts().forEach((el) => observer.observe(el))
+    publish()
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--chrome-height')
+    }
+  }) // no dependency list: the run-status bar comes and goes, and must be re-observed
 }
 
 function RunStatus({ run, fileName, onReset }) {
@@ -52,6 +75,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null)
 
   const run = computed?.run ?? referenceRun
+  useChromeHeight()
 
   function selectSatellite(id) {
     setSelectedId(id)

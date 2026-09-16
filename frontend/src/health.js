@@ -22,7 +22,7 @@ function readTokens() {
   tokens = {
     stops: STOP_TOKENS.map((name) => hexToRgb(style.getPropertyValue(name))),
     ink: style.getPropertyValue('--ink').trim().split(/\s+/).map(Number),
-    paper: hexToRgb(style.getPropertyValue('--paper')),
+    page: hexToRgb(style.getPropertyValue('--page')),
   }
   return tokens
 }
@@ -56,16 +56,23 @@ function contrast(a, b) {
   return (hi + 0.05) / (lo + 0.05)
 }
 
+// Body text on the dark ground reads at 7:1, not the 4.5:1 minimum: small
+// light-on-dark type needs the margin.
+const TEXT_CONTRAST = 7
+// A status colour is never text at full saturation: at least this much ink is
+// mixed in, so it cannot vibrate against the dark ground.
+const TEXT_MIN_MIX = 0.3
+
 /**
- * The same hue as healthColor(t), darkened toward ink just enough to read as
- * text on --paper (4.5:1). The mid-spectrum stops are too light to use raw.
+ * The same hue as healthColor(t), mixed toward ink: at least TEXT_MIN_MIX, and
+ * further if that is what it takes to read at TEXT_CONTRAST on --page.
  */
 export function healthTextColor(t) {
-  const { ink, paper } = readTokens()
+  const { ink, page } = readTokens()
   const base = healthRgb(t)
-  for (let k = 0; k <= 1; k += 0.05) {
+  for (let k = TEXT_MIN_MIX; k <= 1; k += 0.05) {
     const mixed = base.map((c, i) => c + (ink[i] - c) * k)
-    if (contrast(mixed, paper) >= 4.5) return toCss(mixed)
+    if (contrast(mixed, page) >= TEXT_CONTRAST) return toCss(mixed)
   }
   return toCss(ink)
 }

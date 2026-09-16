@@ -1,39 +1,92 @@
 :root {
-  /* Neutrals: cool off-white chrome, so the health spectrum carries the colour. */
-  --paper: #F7F7F5;
-  --surface: #FFFFFF;
-  --raised: #FFFFFF; /* cards: separated from --paper by border, not tone */
-  --sunken: #ECECE8;
-  --line: #E0E0DA; /* panel borders */
-  --line-firm: #C5C5BC; /* control borders, bar fills that are not health */
+  /* Space, furthest to nearest: the page ground, the base surface, panels,
+     cards. Wells sink below the base. */
+  --space-deep: #04060B;
+  --space: #0A1119;
+  --surface: #121C26;
+  --raised: #18242F;
+  --sunken: #0C141C;
+  --page: #04060B; /* the ground health.js measures text against */
+  --line: #2B3B49; /* panel borders */
+  --line-firm: #3F566A; /* control borders, chart axes, bar fills that are not health */
 
-  /* Ink. Muted and faint clear 4.5:1 on --paper, --surface, --sunken and
-     --accent-soft. Faint is 0.62, the lowest alpha that does. */
-  --ink: 26 28 26;
-  --text: rgb(var(--ink));
+  /* Ink: cooled, and never at full alpha. Light on dark bleeds; these alphas
+     clear 7:1 for body text (0.92 and 0.72) on every surface and 4.5:1 for
+     small labels (0.56). */
+  --ink: 222 232 240;
+  --text: rgb(var(--ink) / 0.92);
+  --text-heading: rgb(var(--ink) / 0.96);
   --text-muted: rgb(var(--ink) / 0.72);
-  --text-faint: rgb(var(--ink) / 0.62);
+  --text-faint: rgb(var(--ink) / 0.56);
 
-  /* Health spectrum, healthy to critical. Status is a position on this scale:
-     normal --h0, warning --h2, critical --h4. health.js interpolates between
-     these stops, reading them from here. */
-  --h0: #167C4A;
-  --h1: #6FA320;
-  --h2: #D19A0E;
-  --h3: #DE6F1C;
-  --h4: #BC2E22;
+  /* The scene: Earth, sunrise, the bus. */
+  --earth-deep: #0E3A5C;
+  --earth-mid: #2B7FA8;
+  --earth-rim: #7FD4E8;
+  --earth-night: #0A1119;
+  --earth-band: #1C5C82; /* the middle of the three flat ocean tones */
+  --cloud: #E6F2F8;
+  /* Land, each with an edge a step darker than its fill: the outline is what
+     makes the illustration read as drawn. */
+  --land-green: #3E7D52;
+  --land-green-edge: #2C5C3B;
+  --land-dry: #7A8C4A;
+  --land-dry-edge: #596735;
+  --land-arid: #9C8659;
+  --land-arid-edge: #736240;
+  --sun-core: #FFF0C4;
+  --sun-flare: #F5B942;
+  --panel-blue: #1B3A6B;
+  --panel-grid: #4A7BB8;
+  --metal: #C8D2DC;
+  --star: 191 230 240; /* --earth-rim lightened, so the field sits in one family */
 
-  /* The detection threshold on charts: a darkened --h2, so a 1px dash holds
-     5:1 on --sunken. */
-  --threshold: #8A5A0A;
+  /* Health spectrum, healthy to critical, brightened for the dark ground.
+     Status is a position on this scale: normal --h0, warning --h2, critical
+     --h4. health.js interpolates between these stops, reading them from here.
+     Used for bars, dots and edges. */
+  --h0: #35C98A;
+  --h1: #9FD13A;
+  --h2: #F0B429;
+  --h3: #F2802B;
+  --h4: #E85A4F;
 
-  /* Interaction: deep teal-green, never a status colour. */
-  --accent: #16564E;
-  --accent-soft: #E6EFED;
+  /* The same statuses as TEXT: mixed toward ink (30%, 45% for --h4) so small
+     saturated type does not vibrate, and each clears 7:1 on cards. */
+  --h0-text: #68D2A9;
+  --h2-text: #EBC465;
+  --h4-text: #E49A97;
+
+  /* The detection threshold on charts. */
+  --threshold: var(--h2);
+
+  /* Frosted glass, where backdrop-filter is supported: translucent fills of
+     --surface and --raised, an edge of ink, and a single lit top edge. The
+     alphas are set by contrast (see the ratios in the header comment of the
+     glass block below), not by taste. */
+  --glass-surface: rgb(18 28 38 / 0.68);
+  --glass-raised: rgb(24 36 47 / 0.72);
+  /* The masthead alone is denser: the sticky scene can pass beneath it at the
+     end of Upload and Pipeline on a short viewport, and --text-muted over the
+     rim glow measured 6.9:1 at 0.9. Cards never sit over the scene. */
+  --glass-masthead: rgb(18 28 38 / 0.94);
+  /* Height of the banner, masthead and run-status stack. Measured and set on
+     the root by App.jsx; this is the value before the first measurement. */
+  --chrome-height: 163px;
+  /* The scene's caption row: gap, rule, one line of 13px text. */
+  --scene-caption: 46px;
+  --glass-edge: rgb(var(--ink) / 0.12);
+  --glass-highlight: rgb(var(--ink) / 0.06);
+  --glass-blur: blur(16px) saturate(1.2);
+
+  /* Interaction: sky blue, never a status colour. */
+  --accent: #4FA8C8;
+  --accent-soft: #14303D;
+  --on-accent: var(--space-deep);
 
   /* Identity: clock type only. */
-  --clock-imported: #6E6E66;
-  --clock-irafs: #16564E;
+  --clock-imported: #A7B3BE;
+  --clock-irafs: #7FD4E8;
 
   /* Spacing scale. */
   --space-1: 4px;
@@ -53,7 +106,7 @@
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --settle: 180ms;
   --gutter: clamp(16px, 5vw, 64px);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 *,
@@ -62,18 +115,180 @@
   box-sizing: border-box;
 }
 
-html,
-body {
-  background: var(--paper);
+/* The ground: deep space, lit faintly from the upper left, under a starfield.
+   The root background propagates to the canvas, so it covers the viewport
+   however short the page is. */
+html {
+  background: var(--space-deep) radial-gradient(140% 100% at 0% 0%, var(--space) 0%, var(--space-deep) 70%);
+  background-attachment: fixed;
 }
 
 body {
+  position: relative;
   margin: 0;
   color: var(--text);
   font-family: var(--sans);
+  /* Light on dark optically thickens and spreads: a lighter weight and a
+     touch of tracking restore the intended colour of the page. */
+  font-weight: 380;
   font-size: 15px;
   line-height: 1.5;
+  letter-spacing: 0.01em;
   -webkit-font-smoothing: antialiased;
+}
+
+/* The starfield: one 2px dot and 120 shadows of it, fixed to the viewport, at
+   opacities between 0.15 and 0.5, tinted toward the atmospheric rim. Panels
+   sit on solid fills, so it shows only around the content. */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: transparent;
+  pointer-events: none;
+  box-shadow:
+    1262px 267px 0 0px rgb(var(--star) / 0.38),
+    532px 1138px 0 0px rgb(var(--star) / 0.23),
+    1780px 763px 0 0.5px rgb(var(--star) / 0.34),
+    1065px 427px 0 0.5px rgb(var(--star) / 0.38),
+    1838px 811px 0 1px rgb(var(--star) / 0.16),
+    1505px 85px 0 0.5px rgb(var(--star) / 0.2),
+    1581px 252px 0 0px rgb(var(--star) / 0.25),
+    1015px 2px 0 0.5px rgb(var(--star) / 0.32),
+    1080px 332px 0 0.5px rgb(var(--star) / 0.43),
+    704px 520px 0 0.5px rgb(var(--star) / 0.23),
+    956px 410px 0 0.5px rgb(var(--star) / 0.16),
+    495px 440px 0 0px rgb(var(--star) / 0.26),
+    1481px 221px 0 0px rgb(var(--star) / 0.35),
+    209px 124px 0 0px rgb(var(--star) / 0.49),
+    1125px 557px 0 0px rgb(var(--star) / 0.18),
+    903px 966px 0 1px rgb(var(--star) / 0.5),
+    571px 10px 0 0px rgb(var(--star) / 0.26),
+    1714px 162px 0 0px rgb(var(--star) / 0.21),
+    255px 1024px 0 0px rgb(var(--star) / 0.4),
+    365px 439px 0 0px rgb(var(--star) / 0.38),
+    1206px 769px 0 0.5px rgb(var(--star) / 0.34),
+    1060px 78px 0 0px rgb(var(--star) / 0.34),
+    1009px 803px 0 0.5px rgb(var(--star) / 0.31),
+    565px 277px 0 0.5px rgb(var(--star) / 0.31),
+    296px 782px 0 0px rgb(var(--star) / 0.39),
+    294px 740px 0 0px rgb(var(--star) / 0.26),
+    630px 509px 0 0px rgb(var(--star) / 0.43),
+    1863px 512px 0 0px rgb(var(--star) / 0.26),
+    1199px 873px 0 0px rgb(var(--star) / 0.17),
+    1850px 1039px 0 1px rgb(var(--star) / 0.45),
+    1559px 363px 0 1px rgb(var(--star) / 0.39),
+    1512px 645px 0 0.5px rgb(var(--star) / 0.49),
+    592px 290px 0 0.5px rgb(var(--star) / 0.29),
+    1424px 480px 0 0.5px rgb(var(--star) / 0.43),
+    1652px 140px 0 0px rgb(var(--star) / 0.46),
+    859px 857px 0 0px rgb(var(--star) / 0.23),
+    301px 585px 0 0px rgb(var(--star) / 0.26),
+    917px 466px 0 0.5px rgb(var(--star) / 0.31),
+    852px 522px 0 0px rgb(var(--star) / 0.48),
+    42px 734px 0 0.5px rgb(var(--star) / 0.17),
+    1150px 997px 0 0px rgb(var(--star) / 0.15),
+    337px 847px 0 0.5px rgb(var(--star) / 0.42),
+    1338px 29px 0 0.5px rgb(var(--star) / 0.4),
+    220px 74px 0 0px rgb(var(--star) / 0.25),
+    560px 993px 0 0.5px rgb(var(--star) / 0.19),
+    915px 384px 0 0px rgb(var(--star) / 0.47),
+    721px 1076px 0 1px rgb(var(--star) / 0.29),
+    1446px 902px 0 0px rgb(var(--star) / 0.39),
+    1084px 22px 0 1px rgb(var(--star) / 0.44),
+    176px 806px 0 0.5px rgb(var(--star) / 0.44),
+    965px 110px 0 0px rgb(var(--star) / 0.31),
+    56px 1144px 0 0px rgb(var(--star) / 0.22),
+    1204px 465px 0 0px rgb(var(--star) / 0.21),
+    243px 478px 0 0px rgb(var(--star) / 0.34),
+    363px 794px 0 0px rgb(var(--star) / 0.27),
+    456px 1071px 0 1px rgb(var(--star) / 0.37),
+    970px 810px 0 0px rgb(var(--star) / 0.46),
+    856px 1066px 0 0.5px rgb(var(--star) / 0.34),
+    1820px 1109px 0 0.5px rgb(var(--star) / 0.21),
+    1554px 1023px 0 0px rgb(var(--star) / 0.46),
+    1682px 162px 0 0px rgb(var(--star) / 0.18),
+    612px 799px 0 0px rgb(var(--star) / 0.31),
+    917px 647px 0 0px rgb(var(--star) / 0.28),
+    1430px 388px 0 0.5px rgb(var(--star) / 0.28),
+    261px 73px 0 0px rgb(var(--star) / 0.35),
+    1790px 169px 0 0px rgb(var(--star) / 0.35),
+    389px 333px 0 0.5px rgb(var(--star) / 0.24),
+    182px 158px 0 0px rgb(var(--star) / 0.18),
+    1099px 1069px 0 0.5px rgb(var(--star) / 0.29),
+    1851px 315px 0 0px rgb(var(--star) / 0.32),
+    1083px 879px 0 0.5px rgb(var(--star) / 0.19),
+    726px 478px 0 0px rgb(var(--star) / 0.28),
+    1254px 1067px 0 0.5px rgb(var(--star) / 0.48),
+    966px 994px 0 1px rgb(var(--star) / 0.16),
+    1076px 502px 0 0px rgb(var(--star) / 0.44),
+    1555px 882px 0 0.5px rgb(var(--star) / 0.45),
+    862px 605px 0 0px rgb(var(--star) / 0.29),
+    1189px 372px 0 0.5px rgb(var(--star) / 0.42),
+    262px 1025px 0 0.5px rgb(var(--star) / 0.47),
+    768px 643px 0 0.5px rgb(var(--star) / 0.24),
+    1257px 273px 0 0px rgb(var(--star) / 0.42),
+    1523px 456px 0 0px rgb(var(--star) / 0.46),
+    741px 362px 0 0px rgb(var(--star) / 0.16),
+    403px 703px 0 0.5px rgb(var(--star) / 0.4),
+    605px 132px 0 0.5px rgb(var(--star) / 0.32),
+    1040px 220px 0 0px rgb(var(--star) / 0.2),
+    1741px 251px 0 0px rgb(var(--star) / 0.16),
+    1095px 920px 0 0px rgb(var(--star) / 0.19),
+    481px 475px 0 1px rgb(var(--star) / 0.36),
+    639px 317px 0 0px rgb(var(--star) / 0.29),
+    1295px 160px 0 0.5px rgb(var(--star) / 0.22),
+    1779px 797px 0 0.5px rgb(var(--star) / 0.18),
+    1655px 743px 0 0.5px rgb(var(--star) / 0.45),
+    1012px 396px 0 1px rgb(var(--star) / 0.49),
+    1766px 193px 0 1px rgb(var(--star) / 0.46),
+    150px 982px 0 1px rgb(var(--star) / 0.26),
+    1286px 314px 0 0px rgb(var(--star) / 0.3),
+    55px 534px 0 0.5px rgb(var(--star) / 0.37),
+    389px 1027px 0 1px rgb(var(--star) / 0.17),
+    1208px 96px 0 0px rgb(var(--star) / 0.29),
+    178px 816px 0 0px rgb(var(--star) / 0.46),
+    644px 919px 0 0.5px rgb(var(--star) / 0.38),
+    831px 375px 0 0.5px rgb(var(--star) / 0.36),
+    1379px 963px 0 0px rgb(var(--star) / 0.42),
+    1355px 457px 0 1px rgb(var(--star) / 0.25),
+    545px 213px 0 0px rgb(var(--star) / 0.39),
+    23px 905px 0 0px rgb(var(--star) / 0.32),
+    816px 1045px 0 1px rgb(var(--star) / 0.42),
+    609px 255px 0 0.5px rgb(var(--star) / 0.5),
+    185px 888px 0 0px rgb(var(--star) / 0.27),
+    102px 84px 0 0px rgb(var(--star) / 0.27),
+    901px 796px 0 0.5px rgb(var(--star) / 0.44),
+    35px 418px 0 0px rgb(var(--star) / 0.43),
+    1861px 111px 0 0px rgb(var(--star) / 0.49),
+    266px 1045px 0 0.5px rgb(var(--star) / 0.31),
+    126px 1110px 0 0.5px rgb(var(--star) / 0.25),
+    771px 907px 0 0px rgb(var(--star) / 0.49),
+    1670px 749px 0 0px rgb(var(--star) / 0.17),
+    1560px 446px 0 0.5px rgb(var(--star) / 0.45),
+    1178px 846px 0 0px rgb(var(--star) / 0.29);
+}
+
+h1,
+h2,
+h3 {
+  color: var(--text-heading);
+  letter-spacing: 0;
+}
+
+.wordmark,
+.sat-id,
+.detail-id,
+.stat-value,
+.prognosis-value,
+.stage-name {
+  color: var(--text-heading);
+  letter-spacing: 0;
 }
 
 button,
@@ -91,7 +306,7 @@ button {
   cursor: pointer;
 }
 
-/* --accent is at least 7:1 on white, --paper and --sunken. */
+/* --accent is 5.8:1 or better on every surface, so the ring reads everywhere. */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -122,7 +337,12 @@ button {
   font-size: 13px;
 }
 
+/* Sticky from 700px up, so content scrolls beneath it and the glass has
+   something to blur; on a phone it wraps to two rows and would take a quarter
+   of the viewport, so there it scrolls away. Solid here; the glass fill is
+   applied under @supports further down. */
 .masthead {
+  z-index: 10;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -130,6 +350,7 @@ button {
   gap: var(--space-3) var(--space-6);
   padding: var(--space-5) var(--gutter);
   border-bottom: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .wordmark {
@@ -202,7 +423,7 @@ button {
 
 .run-status-reset:hover {
   background: var(--accent);
-  color: var(--surface);
+  color: var(--on-accent);
 }
 
 .view {
@@ -222,6 +443,13 @@ button {
   }
 }
 
+@media (min-width: 700px) {
+  .masthead {
+    position: sticky;
+    top: 0;
+  }
+}
+
 /* Shared */
 
 .quiet {
@@ -236,7 +464,7 @@ button {
   font-size: 13px;
 }
 
-/* Panels: white on paper, separated by a border. */
+/* Panels: solid on the ground, separated by a quiet border. */
 .summary-strip,
 .clock-comparison,
 .controls,
@@ -414,7 +642,7 @@ button {
   gap: var(--space-4);
 }
 
-/* Cards: white, 10px radius, 1px border; the 6px left edge is the severity. */
+/* Cards: raised, 10px radius, 1px border; the 6px left edge is the severity. */
 .sat-card {
   display: grid;
   align-content: start;
@@ -447,7 +675,6 @@ button {
   border-top-color: var(--accent);
   border-right-color: var(--accent);
   border-bottom-color: var(--accent);
-  background: var(--accent-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -620,12 +847,12 @@ button {
 }
 
 .chart-threshold-label {
-  fill: var(--threshold);
+  fill: var(--h2-text);
 }
 
 .chart-flagged {
   fill: var(--h4);
-  fill-opacity: 0.12;
+  fill-opacity: 0.14;
 }
 
 .chart-confirmed {
@@ -646,7 +873,7 @@ button {
 }
 
 .chart-selected-dot {
-  stroke: var(--surface);
+  stroke: var(--sunken);
   stroke-width: 2;
 }
 
@@ -690,7 +917,7 @@ button {
   width: 24px;
   height: 24px;
   margin-top: -5px;
-  border: 4px solid var(--surface);
+  border: 4px solid var(--page);
   border-radius: 50%;
   background: var(--thumb-color, var(--accent));
   appearance: none;
@@ -700,7 +927,7 @@ button {
 .scrubber input[type='range']::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  border: 4px solid var(--surface);
+  border: 4px solid var(--page);
   border-radius: 50%;
   background: var(--thumb-color, var(--accent));
 }
@@ -728,7 +955,7 @@ button {
 }
 
 .flag-state[data-flagged='true'] {
-  color: var(--h4);
+  color: var(--h4-text);
 }
 
 .jump-buttons {
@@ -906,6 +1133,11 @@ button {
   background: var(--accent-soft);
 }
 
+.drop-zone:hover .quiet,
+.drop-zone[data-dragging='true'] .quiet {
+  color: var(--text);
+}
+
 .drop-title {
   font-size: 17px;
 }
@@ -920,7 +1152,7 @@ button {
 
 .inline-error {
   margin: 0;
-  color: var(--h4);
+  color: var(--h4-text);
 }
 
 .fields {
@@ -985,7 +1217,7 @@ button {
 }
 
 .issue-row {
-  color: var(--h4);
+  color: var(--h4-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1012,10 +1244,11 @@ button {
 .action-buttons .primary {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--surface);
+  color: var(--on-accent);
+  font-weight: 500;
 }
 
-/* The ring matches the fill, so open a clear paper gap between them. */
+/* The ring matches the fill, so open a clear gap between them. */
 .action-buttons .primary:focus-visible {
   outline-offset: 4px;
 }
@@ -1044,7 +1277,7 @@ button {
 }
 
 /* The analysis service could not be reached: prominent, but a status colour
-   would read as a satellite's health, so it is ink on --h2's rule. */
+   would read as a satellite's health, so it is ink beside a --h2 rule. */
 .fallback-note {
   display: grid;
   gap: var(--space-2);
@@ -1073,10 +1306,14 @@ button {
   max-width: 880px;
 }
 
+/* A panel like the others; glass under @supports. */
 .stages {
   display: grid;
   margin: 0;
-  padding: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
   list-style: none;
 }
 
@@ -1101,7 +1338,7 @@ button {
   height: 12px;
   border: 1px solid var(--line-firm);
   border-radius: 50%;
-  background: var(--paper);
+  background: var(--page);
 }
 
 /* The connector: a 1px rule from this mark down to the next. */
@@ -1194,102 +1431,234 @@ button {
   color: var(--text-muted);
 }
 
-/* Two-column views with the constellation health rail */
+/* Two-column views: content left, the orbit scene right */
 
-/* Below 960px the rail column does not exist: one column, no gap. */
+/* Below 960px the scene column does not exist: one column, no gap. */
 .split-aside {
   display: none;
 }
 
 @media (min-width: 960px) {
   .split {
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
     align-items: start;
     column-gap: var(--gutter);
   }
 
-  /* Stretch the column to the row height so the rail can stick within it. */
+  /* Stretch the column to the row height so the scene can stick within it. */
   .split-aside {
     display: block;
     align-self: stretch;
   }
 
+  /* Fixed in place: the offset equals the scene's own in-flow position (the
+     chrome above the view plus the view's padding), so it never moves between
+     the top of the page and the point where it sticks; and the box is sized to
+     fit the viewport below that offset, so the column's end never pushes it
+     up. The scene scales to the box, keeping its aspect. */
   .split-sticky {
     position: sticky;
-    top: var(--gutter);
+    top: calc(var(--chrome-height) + var(--gutter));
+    /* 1px short of the column's end, so subpixel rounding there can never
+       clamp the box upward. */
+    height: calc(100vh - var(--chrome-height) - 2 * var(--gutter) - 1px);
+  }
+
+  .scene-stage {
+    width: min(100%, calc((100vh - var(--chrome-height) - 2 * var(--gutter) - var(--scene-caption)) * 0.7));
+    margin-left: auto;
   }
 }
 
-.rail {
+/* The scene is not a panel: it sits straight on the ground, so the starfield
+   runs on behind the satellite. */
+.scene {
   display: grid;
-  gap: var(--space-4);
-  padding: var(--space-5);
-  border: 1px solid var(--line);
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.scene-stage {
+  position: relative;
+  aspect-ratio: 7 / 10;
+  overflow: hidden;
   border-radius: var(--radius-card);
-  background: var(--surface);
+  cursor: crosshair;
+  touch-action: pan-y;
 }
 
-.rail-heading {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 22px;
-  font-weight: 400;
-}
-
-.rail-list {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.rail-row {
-  display: grid;
-  grid-template-columns: 6px minmax(0, 1fr) auto auto;
-  align-items: center;
-  column-gap: var(--space-3);
-  min-height: 40px;
-  padding: var(--space-2) 0;
-  font-size: 14px;
-}
-
-.rail-row + .rail-row {
-  border-top: 1px solid var(--line);
-}
-
-.rail-bar {
+.scene-layer {
+  position: absolute;
+  inset: 0;
   display: block;
-  width: 6px;
-  height: 28px;
+  width: 100%;
+  height: 100%;
 }
 
-.rail-id {
-  font-family: var(--serif);
-  font-size: 17px;
+/* Rasterised once: the blurred rim and the sun never change. */
+.scene-static {
+  will-change: transform;
 }
 
-.rail-severity {
-  color: var(--text-muted);
-  text-transform: capitalize;
-}
-
-.rail-life {
-  min-width: 56px;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.health-key {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding-top: var(--space-2);
-}
-
-.health-key-labels {
-  display: flex;
-  justify-content: space-between;
+.scene-caption {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
   color: var(--text-faint);
   font-size: 13px;
+}
+
+/* Earth */
+.stop-earth-mid {
+  stop-color: var(--earth-mid);
+}
+
+.stop-earth-deep {
+  stop-color: var(--earth-deep);
+}
+
+.stop-earth-night {
+  stop-color: var(--earth-night);
+}
+
+.stop-earth-rim {
+  stop-color: var(--earth-rim);
+}
+
+.stop-earth-band {
+  stop-color: var(--earth-band);
+}
+
+/* Landmasses: flat fills with a half-pixel darker outline. */
+.land {
+  stroke-width: 0.5;
+  stroke-linejoin: round;
+}
+
+.land-green {
+  fill: var(--land-green);
+  stroke: var(--land-green-edge);
+}
+
+.land-dry {
+  fill: var(--land-dry);
+  stroke: var(--land-dry-edge);
+}
+
+.land-arid {
+  fill: var(--land-arid);
+  stroke: var(--land-arid-edge);
+}
+
+.earth-halo {
+  fill: none;
+  stroke: var(--earth-rim);
+  stroke-opacity: 0.35;
+}
+
+.earth-glow {
+  fill: none;
+  stroke: var(--earth-rim);
+  stroke-opacity: 0.7;
+}
+
+.earth-cloud {
+  fill: var(--cloud);
+}
+
+/* Sunrise on the limb */
+.stop-sun-core {
+  stop-color: var(--sun-core);
+}
+
+.stop-sun-flare {
+  stop-color: var(--sun-flare);
+}
+
+.sun-core {
+  fill: var(--sun-core);
+  fill-opacity: 0.9;
+}
+
+.sun-spike {
+  stroke: var(--sun-core);
+  stroke-width: 1.1;
+  stroke-opacity: 0.55;
+  stroke-linecap: round;
+}
+
+/* The bus: structure in metal, cell divisions in the panel grid, the antenna
+   in the accent, wings filled so they read as surfaces. Opacity per element
+   is depth, set per frame. */
+.sat-face {
+  fill: var(--panel-blue);
+  fill-opacity: 0.35;
+}
+
+.sat-edge {
+  stroke-linecap: round;
+}
+
+.sat-structure {
+  stroke: var(--metal);
+  stroke-width: 1.6;
+}
+
+.sat-cell {
+  stroke: var(--panel-grid);
+  stroke-width: 1.1;
+}
+
+.sat-antenna {
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+
+/* Frosted glass: the masthead, the satellite cards, the drop zone and the
+   stage list. Never the chart well, the scrubber track or the contribution
+   box, which keep solid ground under their data. Without backdrop-filter the
+   solid fills above stay in force. The inset highlight is the lit top edge. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .masthead,
+  .sat-card,
+  .drop-zone,
+  .stages {
+    border-color: var(--glass-edge);
+    background: var(--glass-surface);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+
+  .masthead {
+    background: var(--glass-masthead);
+  }
+
+  .sat-card {
+    background: var(--glass-raised);
+  }
+
+  /* The severity edge is not glass. */
+  .sat-card[data-severity='normal'] {
+    border-left-color: var(--h0);
+  }
+
+  .sat-card[data-severity='warning'] {
+    border-left-color: var(--h2);
+  }
+
+  .sat-card[data-severity='critical'] {
+    border-left-color: var(--h4);
+  }
+
+  .sat-card:hover {
+    border-top-color: var(--accent);
+    border-right-color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .drop-zone:hover,
+  .drop-zone[data-dragging='true'] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
 }

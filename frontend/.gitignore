@@ -5,3 +5,5 @@ dist
 
 # The repo root ignores *.npz; the function's frozen weights must be committed.
 !artifacts/model_weights.npz
+
+.vercel

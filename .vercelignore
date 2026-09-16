@@ -1,0 +1,16 @@
+esa/
+galileo/
+venv/
+__pycache__/
+*.npz
+*.joblib
+telemetry.csv
+detections.csv
+scores.csv
+window_metadata.csv
+preprocessed.npz
+demo/
+docs/
+node_modules/
+
+!frontend/artifacts/model_weights.npz

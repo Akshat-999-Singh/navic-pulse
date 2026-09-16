@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { FALLBACK_NOTE, LIVE_NOTE, analyze, parseTelemetryCsv } from './data.js'
-import ConstellationRail from './ConstellationRail.jsx'
+import OrbitScene from './OrbitScene.jsx'
 
 const MAX_BYTES = 4 * 1024 * 1024
 const SAMPLE_URL = '/sample-batch.csv'
@@ -387,7 +387,7 @@ export default function Upload({
 
       <aside className="split-aside">
         <div className="split-sticky">
-          <ConstellationRail run={run} />
+          <OrbitScene />
         </div>
       </aside>
     </main>

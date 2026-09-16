@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { leadTimeSummary } from './Constellation.jsx'
-import ConstellationRail from './ConstellationRail.jsx'
+import OrbitScene from './OrbitScene.jsx'
 import { FALLBACK_NOTE } from './data.js'
 
 // Reference run: architecture, not a live run. The fixture carries no stage
@@ -96,7 +96,7 @@ export default function Pipeline({ run, fileName, analysis, hidden }) {
         </div>
         <aside className="split-aside">
           <div className="split-sticky">
-            <ConstellationRail run={run} />
+            <OrbitScene />
           </div>
         </aside>
       </main>
@@ -182,7 +182,7 @@ export default function Pipeline({ run, fileName, analysis, hidden }) {
 
       <aside className="split-aside">
         <div className="split-sticky">
-          <ConstellationRail run={run} />
+          <OrbitScene />
         </div>
       </aside>
     </main>
