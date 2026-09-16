@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Constellation from './Constellation.jsx'
+import Satellite from './Satellite.jsx'
 import { useRun } from './data.js'
 
 const VIEWS = [
@@ -46,22 +47,36 @@ export default function App() {
       </header>
 
       {/* All views stay mounted so they keep internal state; inactive ones are hidden. */}
-      {VIEWS.map(({ id, label }) =>
-        id === 'constellation' ? (
-          <Constellation
-            key={id}
-            run={run}
-            failed={failed}
-            hidden={view !== id}
-            onSelect={selectSatellite}
-          />
-        ) : (
+      {VIEWS.map(({ id, label }) => {
+        if (id === 'constellation') {
+          return (
+            <Constellation
+              key={id}
+              run={run}
+              failed={failed}
+              hidden={view !== id}
+              onSelect={selectSatellite}
+            />
+          )
+        }
+        if (id === 'satellite') {
+          return (
+            <Satellite
+              key={id}
+              run={run}
+              failed={failed}
+              satelliteId={selectedId}
+              hidden={view !== id}
+              onBack={() => setView('constellation')}
+            />
+          )
+        }
+        return (
           <main key={id} hidden={view !== id} className="view">
             <h1>{label}</h1>
-            {id === 'satellite' && selectedId && <p className="quiet">{selectedId}</p>}
           </main>
-        ),
-      )}
+        )
+      })}
     </>
   )
 }

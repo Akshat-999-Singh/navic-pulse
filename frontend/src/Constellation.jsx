@@ -44,7 +44,7 @@ function matchesOrbit(orbit, filter) {
   return orbit === filter
 }
 
-function OrbitText({ orbit }) {
+export function OrbitText({ orbit }) {
   const match = orbit.match(/^(.*?)\s*(\(.*\))$/)
   if (!match) return orbit
   return (
@@ -52,6 +52,10 @@ function OrbitText({ orbit }) {
       {match[1]} <span className="orbit-qualifier">{match[2]}</span>
     </>
   )
+}
+
+export function ClockPill({ clockType }) {
+  return <span className="pill">{CLOCK_LABEL[clockType] ?? clockType}</span>
 }
 
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0')
@@ -107,7 +111,7 @@ function SatelliteCard({ satellite, onSelect }) {
     <button type="button" className="sat-card" onClick={() => onSelect(satellite.id)}>
       <span className="sat-head">
         <span className="sat-id">{satellite.id}</span>
-        <span className="pill">{CLOCK_LABEL[satellite.clock_type] ?? satellite.clock_type}</span>
+        <ClockPill clockType={satellite.clock_type} />
       </span>
       <span className="sat-meta">
         {satellite.name} · {satellite.launch_date} · <OrbitText orbit={satellite.orbit} />
