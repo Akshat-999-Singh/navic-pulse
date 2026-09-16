@@ -1,0 +1,116 @@
+{
+  "method": "raw-channel fixed limits, healthy-fleet mean +/- k*sd, any channel",
+  "k_sigma": 3.0,
+  "persistence_windows": 60,
+  "healthy_satellites": [
+    "IRNSS-1B",
+    "IRNSS-1C",
+    "IRNSS-1F",
+    "NVS-01",
+    "NVS-02"
+  ],
+  "limits": {
+    "freq_offset_y": {
+      "mean": -4.4117623014296157e-13,
+      "sd": 2.1459646646757626e-12,
+      "low": -6.879070224170249e-12,
+      "high": 5.996717763884326e-12
+    },
+    "trb_core_temp_c": {
+      "mean": 10.013295560826508,
+      "sd": 3.1836308107902136,
+      "low": 0.4624031284558665,
+      "high": 19.56418799319715
+    },
+    "rafs_signal_level": {
+      "mean": 1.0000038968007754,
+      "sd": 0.003987798180770389,
+      "low": 0.9880405022584642,
+      "high": 1.0119672913430866
+    },
+    "bus_voltage_v": {
+      "mean": 49.72986124822464,
+      "sd": 0.6449637088583209,
+      "low": 47.794970121649676,
+      "high": 51.6647523747996
+    },
+    "steering_correction_ns": {
+      "mean": -38.11762628435188,
+      "sd": 185.77761064642058,
+      "low": -595.4504582236136,
+      "high": 519.2152056549098
+    }
+  },
+  "satellites": [
+    {
+      "satellite_id": "IRNSS-1B",
+      "baseline_flagged_index": 116,
+      "baseline_sustained_index": null,
+      "channels_triggered": []
+    },
+    {
+      "satellite_id": "IRNSS-1C",
+      "baseline_flagged_index": 395,
+      "baseline_sustained_index": null,
+      "channels_triggered": []
+    },
+    {
+      "satellite_id": "IRNSS-1F",
+      "baseline_flagged_index": 267,
+      "baseline_sustained_index": null,
+      "channels_triggered": []
+    },
+    {
+      "satellite_id": "NVS-01",
+      "baseline_flagged_index": 18,
+      "baseline_sustained_index": null,
+      "channels_triggered": []
+    },
+    {
+      "satellite_id": "NVS-02",
+      "baseline_flagged_index": 79,
+      "baseline_sustained_index": null,
+      "channels_triggered": []
+    },
+    {
+      "satellite_id": "IRNSS-1I",
+      "baseline_flagged_index": 489,
+      "baseline_sustained_index": 1739,
+      "channels_triggered": [
+        "rafs_signal_level"
+      ]
+    },
+    {
+      "satellite_id": "IRNSS-1E",
+      "baseline_flagged_index": 1039,
+      "baseline_sustained_index": 2101,
+      "channels_triggered": [
+        "rafs_signal_level"
+      ]
+    },
+    {
+      "satellite_id": "IRNSS-1A",
+      "baseline_flagged_index": 116,
+      "baseline_sustained_index": 2346,
+      "channels_triggered": [
+        "rafs_signal_level"
+      ]
+    },
+    {
+      "satellite_id": "IRNSS-1G",
+      "baseline_flagged_index": 142,
+      "baseline_sustained_index": 382,
+      "channels_triggered": [
+        "rafs_signal_level"
+      ]
+    },
+    {
+      "satellite_id": "IRNSS-1D",
+      "baseline_flagged_index": 78,
+      "baseline_sustained_index": 890,
+      "channels_triggered": [
+        "rafs_signal_level"
+      ]
+    }
+  ]
+}
