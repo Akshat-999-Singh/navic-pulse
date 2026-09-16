@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import AnomalyChart from './AnomalyChart.jsx'
-import { ClockPill, OrbitText } from './Constellation.jsx'
+import { ClockPill, SatelliteMeta } from './Constellation.jsx'
 import { healthColor, healthTextColor, satelliteHealth } from './health.js'
 
 const TRACK_STOPS = 64 // gradient stops sampled across the scrubber track
@@ -50,9 +50,11 @@ function Header({ satellite, onBack }) {
         <h1 className="detail-id">{satellite.id}</h1>
         <ClockPill clockType={satellite.clock_type} />
       </div>
-      <p className="sat-meta detail-line">
-        {satellite.name} · {satellite.launch_date} · <OrbitText orbit={satellite.orbit} />
-      </p>
+      {(satellite.name || satellite.launch_date || satellite.orbit) && (
+        <p className="sat-meta detail-line">
+          <SatelliteMeta satellite={satellite} />
+        </p>
+      )}
       <p className="sat-severity detail-line">
         <span className="severity-dot" data-severity={satellite.severity} aria-hidden="true" />
         {satellite.severity}

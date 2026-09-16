@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { PRECOMPUTED_NOTE, parseTelemetryCsv } from './data.js'
+import { FALLBACK_NOTE, LIVE_NOTE, analyze, parseTelemetryCsv } from './data.js'
 import ConstellationRail from './ConstellationRail.jsx'
 
 const MAX_BYTES = 4 * 1024 * 1024
@@ -57,9 +57,22 @@ function Field({ id, label, children }) {
   )
 }
 
-export default function Upload({ run, hidden, onComplete }) {
+export default function Upload({
+  run,
+  hidden,
+  analysing,
+  unavailable,
+  onAnalysisStart,
+  onAnalysisSuccess,
+  onAnalysisFailure,
+}) {
   const inputRef = useRef(null)
-  const [file, setFile] = useState(null) // { name, bytes, parsed }
+  const [file, setFile] = useState(null) // { name, bytes, blob, parsed }
+  // What the analysis service said about one file at one cadence; it stops
+  // applying as soon as either changes.
+  const [rejection, setRejection] = useState(null) // { file, cadenceId, errors?, tooLarge? }
+  // The batch the service could not analyse, so the fallback names that one.
+  const [notAnalysed, setNotAnalysed] = useState(null)
   const [fileError, setFileError] = useState(null)
   const [dragging, setDragging] = useState(false)
   const [loadingSample, setLoadingSample] = useState(false)
@@ -78,6 +91,15 @@ export default function Upload({ run, hidden, onComplete }) {
     if (parsed.errors.length === 0 && parsed.rows.length === 0) {
       list.push({ label: 'File', text: 'The file has a header but no data rows.' })
     }
+    const rejected = rejection?.file === file && rejection.cadenceId === cadence.id
+    if (rejected && rejection.errors) {
+      for (const e of rejection.errors) {
+        list.push({
+          label: e.row == null ? 'Service' : `Row ${e.row}`,
+          text: e.column ? `${e.column}: ${e.message}` : e.message,
+        })
+      }
+    }
     const mismatched = cadenceMismatches(parsed, cadence)
     if (mismatched.length > 0) {
       list.push({
@@ -89,15 +111,43 @@ export default function Upload({ run, hidden, onComplete }) {
       })
     }
     return list
-  }, [file, cadence])
+  }, [file, cadence, rejection])
 
-  const metadataComplete = Object.values(metadata).every((value) => value.trim() !== '')
-  const clean = Boolean(file?.parsed) && !fileError && issues.length === 0
-  const canSubmit = clean && metadataComplete
+  const tooLarge = rejection?.tooLarge && rejection.file === file
+  const clean = Boolean(file?.parsed) && !fileError && issues.length === 0 && !tooLarge
+  const canSubmit = clean && !analysing
 
-  function accept(name, bytes, text, presetMetadata) {
+  async function submit() {
+    const batch = file
+    const batchCadence = cadence.id
+    setRejection(null)
+    setNotAnalysed(null)
+    onAnalysisStart(batch.name)
+    try {
+      const result = await analyze(batch.blob, batchCadence, {
+        name: metadata.name,
+        launch_date: metadata.launchDate,
+        clock_type: metadata.clockType,
+        orbit: metadata.orbit,
+      })
+      onAnalysisSuccess(result, batch.name)
+    } catch (error) {
+      if (error?.validation) {
+        setRejection({ file: batch, cadenceId: batchCadence, errors: error.validation })
+        onAnalysisFailure('rejected')
+      } else if (error?.tooLarge) {
+        setRejection({ file: batch, cadenceId: batchCadence, tooLarge: true })
+        onAnalysisFailure('rejected')
+      } else {
+        setNotAnalysed(batch)
+        onAnalysisFailure('unavailable')
+      }
+    }
+  }
+
+  function accept(name, bytes, text, blob, presetMetadata) {
     const parsed = parseTelemetryCsv(text)
-    setFile({ name, bytes, parsed })
+    setFile({ name, bytes, blob, parsed })
     setFileError(null)
     if (presetMetadata) {
       setMetadata(presetMetadata)
@@ -127,7 +177,7 @@ export default function Upload({ run, hidden, onComplete }) {
       return
     }
     try {
-      accept(picked.name, picked.size, await picked.text())
+      accept(picked.name, picked.size, await picked.text(), picked)
     } catch {
       setFile(null)
       setFileError(`"${picked.name}" could not be read.`)
@@ -142,7 +192,8 @@ export default function Upload({ run, hidden, onComplete }) {
       const text = await response.text()
       // Same guard as useRun: a missing file can come back as index.html.
       if (text.trimStart().startsWith('<')) throw new Error('not a CSV')
-      accept(SAMPLE_NAME, new Blob([text]).size, text, SAMPLE_METADATA)
+      const blob = new File([text], SAMPLE_NAME, { type: 'text/csv' })
+      accept(SAMPLE_NAME, blob.size, text, blob, SAMPLE_METADATA)
     } catch {
       setFile(null)
       setFileError('The sample batch could not be loaded.')
@@ -159,9 +210,21 @@ export default function Upload({ run, hidden, onComplete }) {
         <header className="intake-header">
           <h1>Telemetry intake</h1>
           <p className="lede">
-            A batch of satellite clock telemetry is validated and inspected here: required columns,
-            day ordering, duplicate days, file size and delivery cadence.
+            A batch of satellite clock telemetry is validated here (required columns, day ordering,
+            duplicate days, file size and delivery cadence), then analysed by the detection model.
           </p>
+          {/* Top of the view: a failed analysis lands here, scrolled to the top. */}
+          {unavailable && (
+            <div className="fallback-note" role="alert">
+              <p>{FALLBACK_NOTE}</p>
+              {notAnalysed?.parsed && (
+                <p className="quiet">
+                  Validated in the browser: {notAnalysed.name}, {notAnalysed.parsed.rows.length} rows.
+                  No anomaly scores, detections or prognosis were produced for it.
+                </p>
+              )}
+            </div>
+          )}
         </header>
 
         <section className="intake-section" aria-labelledby="file-heading">
@@ -212,17 +275,25 @@ export default function Upload({ run, hidden, onComplete }) {
               {fileError}
             </p>
           )}
+          {tooLarge && (
+            <p className="inline-error" role="alert">
+              The analysis service refused this batch: requests are limited to 4.5 MB. Split the file
+              by satellite or date range and upload the parts separately.
+            </p>
+          )}
         </section>
 
         <section className="intake-section" aria-labelledby="metadata-heading">
           <h2 id="metadata-heading">Source satellite</h2>
-          <p className="quiet">Operator-supplied reference data; not derived from the file.</p>
+          <p className="quiet">
+            Operator-supplied reference data; not derived from the file. Optional: blank fields show
+            as a dash.
+          </p>
           <div className="fields">
             <Field id="meta-name" label="Satellite name">
               <input
                 id="meta-name"
                 type="text"
-                required
                 value={metadata.name}
                 onChange={setField('name')}
                 autoComplete="off"
@@ -232,20 +303,19 @@ export default function Upload({ run, hidden, onComplete }) {
               <input
                 id="meta-launch"
                 type="date"
-                required
                 value={metadata.launchDate}
                 onChange={setField('launchDate')}
               />
             </Field>
             <Field id="meta-clock" label="Clock type">
-              <select id="meta-clock" required value={metadata.clockType} onChange={setField('clockType')}>
+              <select id="meta-clock" value={metadata.clockType} onChange={setField('clockType')}>
                 <option value="">Select…</option>
                 <option value="imported">Imported</option>
                 <option value="irafs">Indigenous iRAFS</option>
               </select>
             </Field>
             <Field id="meta-orbit" label="Orbit">
-              <select id="meta-orbit" required value={metadata.orbit} onChange={setField('orbit')}>
+              <select id="meta-orbit" value={metadata.orbit} onChange={setField('orbit')}>
                 <option value="">Select…</option>
                 <option value="GEO">GEO</option>
                 <option value="IGSO">IGSO</option>
@@ -300,21 +370,18 @@ export default function Upload({ run, hidden, onComplete }) {
               </ul>
             </>
           )}
-          {clean && !metadataComplete && (
-            <p className="quiet">Complete every source satellite field to continue.</p>
-          )}
         </section>
 
         <section className="intake-actions" aria-label="Actions">
           <div className="action-buttons">
-            <button type="button" className="primary" disabled={!canSubmit} onClick={() => onComplete()}>
-              Validate and continue
+            <button type="button" className="primary" disabled={!canSubmit} onClick={submit}>
+              {analysing ? 'Analysing…' : 'Analyse batch'}
             </button>
             <button type="button" className="secondary" disabled={loadingSample} onClick={loadSample}>
               {loadingSample ? 'Loading sample…' : 'Load sample batch'}
             </button>
           </div>
-          <p className="precomputed-note">{PRECOMPUTED_NOTE}</p>
+          <p className="live-note">{LIVE_NOTE}</p>
         </section>
       </div>
 

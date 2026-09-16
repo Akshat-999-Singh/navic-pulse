@@ -1,12 +1,53 @@
 import { useEffect, useState } from 'react'
 
-// The only data layer in the frontend. There is no backend: every figure on
-// screen comes from public/demo-run.json, written by export_demo_run.py.
+// The only data layer in the frontend. The reference run is public/demo-run.json,
+// written by export_demo_run.py; an uploaded batch is analysed by the Python
+// function at /api/analyze, which returns a run of the same shape.
 
-export const PRECOMPUTED_NOTE =
-  'Analysis is precomputed. This build validates and inspects an uploaded batch; it does not run the model in the browser.'
+export const LIVE_NOTE =
+  'Analysis runs on your uploaded batch. Telemetry is synthetic; the model and thresholds are the ones trained offline.'
+
+export const FALLBACK_NOTE =
+  'Showing the precomputed reference run. The analysis service is unavailable, so your upload was validated but not analysed.'
 
 const RUN_URL = '/demo-run.json'
+const ANALYZE_URL = '/api/analyze'
+const ANALYZE_TIMEOUT_MS = 300_000 // the function's maxDuration in vercel.json
+
+const isRun = (value) => Boolean(value) && Array.isArray(value.satellites)
+
+// POSTs one batch for analysis. Resolves with the computed run; rejects with
+// exactly one of {validation: [{row, column, message}]}, {tooLarge: true} or
+// {unavailable: true}.
+export async function analyze(file, cadence, metadata = {}) {
+  const form = new FormData()
+  form.append('file', file, file.name ?? 'batch.csv')
+  form.append('cadence', cadence)
+  for (const key of ['name', 'launch_date', 'clock_type', 'orbit']) {
+    const value = metadata[key]?.trim()
+    if (value) form.append(key, value)
+  }
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ANALYZE_TIMEOUT_MS)
+  let response
+  let body = null
+  try {
+    response = await fetch(ANALYZE_URL, { method: 'POST', body: form, signal: controller.signal })
+    // A missing function can come back as the SPA's index.html, so an
+    // unparseable body is treated like no service at all.
+    body = await response.json().catch(() => null)
+  } catch {
+    throw { unavailable: true }
+  } finally {
+    clearTimeout(timer)
+  }
+
+  if (response.status === 200 && isRun(body)) return body
+  if (response.status === 422 && Array.isArray(body?.errors)) throw { validation: body.errors }
+  if (response.status === 413) throw { tooLarge: true }
+  throw { unavailable: true }
+}
 
 export function useRun() {
   const [state, setState] = useState({ run: null, loading: true, failed: false })
@@ -21,7 +62,7 @@ export function useRun() {
         // A missing file can come back as the SPA's index.html with a 200, so
         // a parse failure or the wrong shape counts as a failed load too.
         const run = await response.json()
-        if (!run || !Array.isArray(run.satellites)) throw new Error(`${RUN_URL} is not a run`)
+        if (!isRun(run)) throw new Error(`${RUN_URL} is not a run`)
         setState({ run, loading: false, failed: false })
       } catch (error) {
         if (error?.name === 'AbortError') return

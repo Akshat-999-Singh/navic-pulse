@@ -36,16 +36,26 @@ const COMPARE = {
 }
 
 // GEO and IGSO match exactly. An "(intended)" orbit was never reached -- NVS-02
-// is not on station -- so it matches neither and has a filter of its own.
+// is not on station -- so it matches neither and has a filter of its own. The
+// Upload form sends "not-on-station" itself. A computed run without metadata
+// has a null orbit, which only "All" matches.
 const NOT_ON_STATION = '(intended)'
+const NOT_ON_STATION_VALUE = 'not-on-station'
 
 function matchesOrbit(orbit, filter) {
   if (filter === 'all') return true
-  if (filter === 'not-on-station') return orbit.includes(NOT_ON_STATION)
+  if (orbit == null) return false
+  if (filter === NOT_ON_STATION_VALUE) {
+    return orbit === NOT_ON_STATION_VALUE || orbit.includes(NOT_ON_STATION)
+  }
   return orbit === filter
 }
 
+export const DASH = '—'
+
 export function OrbitText({ orbit }) {
+  if (orbit == null || orbit === '') return DASH
+  if (orbit === NOT_ON_STATION_VALUE) return 'Not on station'
   const match = orbit.match(/^(.*?)\s*(\(.*\))$/)
   if (!match) return orbit
   return (
@@ -57,11 +67,25 @@ export function OrbitText({ orbit }) {
 
 export function ClockPill({ clockType }) {
   return (
-    <span className="pill" data-clock={clockType}>
-      {CLOCK_LABEL[clockType] ?? clockType}
+    <span className="pill" data-clock={clockType ?? undefined}>
+      {CLOCK_LABEL[clockType] ?? clockType ?? DASH}
     </span>
   )
 }
+
+// "name · launch date · orbit", leaving out whatever a computed run has as null.
+// With none of the three, nothing is rendered.
+export function SatelliteMeta({ satellite }) {
+  const parts = []
+  if (satellite.name) parts.push(<span key="name">{satellite.name}</span>)
+  if (satellite.launch_date) parts.push(<span key="launch">{satellite.launch_date}</span>)
+  if (satellite.orbit) parts.push(<OrbitText key="orbit" orbit={satellite.orbit} />)
+  return parts.flatMap((part, i) => (i === 0 ? [part] : [' · ', part]))
+}
+
+const hasMeta = (satellite) => Boolean(satellite.name || satellite.launch_date || satellite.orbit)
+
+const fixed = (value, digits) => (typeof value === 'number' ? value.toFixed(digits) : DASH)
 
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0')
 
@@ -125,9 +149,11 @@ function SatelliteCard({ satellite, onSelect }) {
         <span className="sat-id">{satellite.id}</span>
         <ClockPill clockType={satellite.clock_type} />
       </span>
-      <span className="sat-meta">
-        {satellite.name} · {satellite.launch_date} · <OrbitText orbit={satellite.orbit} />
-      </span>
+      {hasMeta(satellite) && (
+        <span className="sat-meta">
+          <SatelliteMeta satellite={satellite} />
+        </span>
+      )}
 
       <span className="sat-severity">
         <span className="severity-dot" data-severity={satellite.severity} aria-hidden="true" />
@@ -141,8 +167,8 @@ function SatelliteCard({ satellite, onSelect }) {
         <span className="sat-row">
           <span className="sat-label">Score</span>
           <span>
-            {satellite.anomaly_score.toFixed(2)}
-            <span className="sat-muted"> / threshold {satellite.threshold.toFixed(2)}</span>
+            {fixed(satellite.anomaly_score, 2)}
+            <span className="sat-muted"> / threshold {fixed(satellite.threshold, 2)}</span>
           </span>
         </span>
         <svg className="bar" aria-hidden="true">
@@ -192,8 +218,8 @@ export default function Constellation({ run, failed, hidden, onSelect }) {
   }
 
   const { summary } = run
-  const detail = summary.lead_time_detail
-  const clocks = summary.clock_comparison
+  const detail = summary?.lead_time_detail
+  const clocks = summary?.clock_comparison
 
   return (
     <main hidden={hidden} className="view constellation">
@@ -202,11 +228,11 @@ export default function Constellation({ run, failed, hidden, onSelect }) {
       <section className="summary-strip" aria-label="Run summary">
         <div className="stats">
           <p className="stat">
-            <span className="stat-value">{summary.satellites}</span>
-            <span className="stat-label">satellites</span>
+            <span className="stat-value">{summary?.satellites ?? run.satellites.length}</span>
+            <span className="stat-label">{run.satellites.length === 1 ? 'satellite' : 'satellites'}</span>
           </p>
           <p className="stat">
-            <span className="stat-value">{summary.flagged}</span>
+            <span className="stat-value">{summary?.flagged ?? DASH}</span>
             <span className="stat-label">flagged</span>
           </p>
         </div>
@@ -222,9 +248,9 @@ export default function Constellation({ run, failed, hidden, onSelect }) {
         <section className="clock-comparison" aria-label="Clock comparison">
           <p>
             Healthy imported and indigenous clocks:{' '}
-            {clocks.healthy_imported_mean_error.toFixed(5)} vs{' '}
-            {clocks.healthy_irafs_mean_error.toFixed(5)} mean error (
-            {clocks.difference_pct.toFixed(2)}% apart
+            {fixed(clocks.healthy_imported_mean_error, 5)} vs{' '}
+            {fixed(clocks.healthy_irafs_mean_error, 5)} mean error (
+            {fixed(clocks.difference_pct, 2)}% apart
             {clocks.conclusive ? '' : ' — not conclusive'})
           </p>
           <p className="note">{clocks.note}</p>
