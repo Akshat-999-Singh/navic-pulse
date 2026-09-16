@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Constellation from './Constellation.jsx'
 import Satellite from './Satellite.jsx'
+import Upload from './Upload.jsx'
 import { useRun } from './data.js'
 
 const VIEWS = [
@@ -48,6 +49,9 @@ export default function App() {
 
       {/* All views stay mounted so they keep internal state; inactive ones are hidden. */}
       {VIEWS.map(({ id, label }) => {
+        if (id === 'upload') {
+          return <Upload key={id} hidden={view !== id} onComplete={() => setView('pipeline')} />
+        }
         if (id === 'constellation') {
           return (
             <Constellation
