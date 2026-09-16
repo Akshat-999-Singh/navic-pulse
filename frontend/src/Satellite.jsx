@@ -1,5 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import AnomalyChart from './AnomalyChart.jsx'
 import { ClockPill, OrbitText } from './Constellation.jsx'
+import { healthColor, healthTextColor, satelliteHealth } from './health.js'
+
+const TRACK_STOPS = 64 // gradient stops sampled across the scrubber track
 
 const PROGNOSIS_CAVEAT =
   'Estimate is ±1 standard error and assumes the observed decline continues at its current rate.'
@@ -29,6 +33,9 @@ function timelineAlt(satellite) {
   if (satellite.persistence_confirmed_index != null) {
     parts.push('the persistence-confirmed detection marked')
   }
+  if (satellite.baseline_flagged_index != null) {
+    parts.push('the fixed-limit baseline detection marked')
+  }
   const last = parts.pop()
   return `Anomaly timeline for ${satellite.id}: ${parts.join(', ')} and ${last}.`
 }
@@ -37,7 +44,7 @@ function Header({ satellite, onBack }) {
   return (
     <header className="detail-header">
       <button type="button" className="back" onClick={onBack}>
-        ← Constellation
+        Back to Constellation
       </button>
       <div className="sat-head">
         <h1 className="detail-id">{satellite.id}</h1>
@@ -64,13 +71,45 @@ function Timeline({ satellite, position, onPosition }) {
   const confirmed = windows.findIndex((w) => w.index === satellite.persistence_confirmed_index)
   const describe = (w) => `Window ${w.index} · days ${w.start}–${w.end} · error ${w.error.toFixed(4)}`
 
+  // The track is the satellite's life on the health spectrum, laid out by array
+  // position so it lines up with the thumb (the windows array is thinned).
+  const health = useMemo(() => satelliteHealth(satellite), [satellite])
+  const track = useMemo(() => {
+    const last = windows.length - 1
+    const count = Math.min(TRACK_STOPS, windows.length)
+    const stops = []
+    for (let k = 0; k < count; k++) {
+      const i = count === 1 ? 0 : Math.round((k * last) / (count - 1))
+      const at = last === 0 ? 0 : (i / last) * 100
+      stops.push(`${healthColor(health.t(windows[i].error))} ${at.toFixed(2)}%`)
+    }
+    return `linear-gradient(90deg, ${stops.join(', ')})`
+  }, [windows, health])
+  const selectedT = selected ? health.t(selected.error) : 0
+  // Data-driven gradient and the colours sampled from it, handed to CSS.
+  const spectrum = {
+    '--track-gradient': track,
+    '--thumb-color': healthColor(selectedT),
+    '--readout-color': healthTextColor(selectedT),
+  }
+
   return (
     <section className="detail-section" aria-labelledby="timeline-heading">
       <h2 id="timeline-heading">Anomaly timeline</h2>
-      <img className="timeline-plot" src={satellite.plot} alt={timelineAlt(satellite)} />
+      {/* satellite.plot (the pre-rendered PNG) may still be in the fixture; it is not rendered. */}
+      <AnomalyChart
+        windows={windows}
+        threshold={satellite.threshold}
+        confirmedIndex={satellite.persistence_confirmed_index}
+        baselineIndex={satellite.baseline_flagged_index}
+        selectedIndex={position}
+        onSelect={onPosition}
+        health={health}
+        label={timelineAlt(satellite)}
+      />
 
       {selected && (
-        <div className="scrubber">
+        <div className="scrubber" style={spectrum}>
           <input
             type="range"
             min="0"
@@ -82,7 +121,7 @@ function Timeline({ satellite, position, onPosition }) {
             aria-valuetext={`${describe(selected)}, ${selected.flagged ? 'flagged' : 'not flagged'}`}
           />
           <p className="window-readout">
-            <span>{describe(selected)}</span>
+            <span className="window-value">{describe(selected)}</span>
             <span className="flag-state" data-flagged={selected.flagged}>
               {selected.flagged ? 'Flagged' : 'Not flagged'}
             </span>
@@ -119,17 +158,13 @@ function Contributions({ window }) {
           return (
             <li key={channel.name} className="channel-bar">
               <span className="channel-name">{channel.name}</span>
-              <svg
-                className="channel-svg"
-                viewBox="0 0 100 8"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <rect className="channel-track" width="100" height="8" />
+              <svg className="bar" aria-hidden="true">
+                <rect className="bar-track" width="100%" height="14" rx="7" />
                 <rect
                   className={i === 0 ? 'channel-fill channel-fill-top' : 'channel-fill'}
-                  width={Math.min(Math.max(pct, 0), 100)}
-                  height="8"
+                  width={`${Math.min(Math.max(pct, 0), 100)}%`}
+                  height="14"
+                  rx="7"
                 />
               </svg>
               <span className="channel-pct">{pct.toFixed(1)}%</span>
@@ -167,10 +202,10 @@ function Prognosis({ life }) {
           </span>
         </p>
         <p className="prognosis-caveat">{PROGNOSIS_CAVEAT}</p>
-        <svg className="range-bar" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true">
-          <rect className="range-track" y="5" width="100" height="2" />
-          <rect className="range-band" x={x(life.low)} y="2" width={x(life.high) - x(life.low)} height="8" />
-          <rect className="range-mark" x={x(life.estimate) - 0.2} width="0.4" height="12" />
+        <svg className="bar range-bar" aria-hidden="true">
+          <rect className="bar-track" width="100%" height="14" rx="7" />
+          <rect className="range-band" x={`${x(life.low)}%`} width={`${x(life.high) - x(life.low)}%`} height="14" rx="7" />
+          <rect className="range-mark" x={`${x(life.estimate)}%`} width="2" height="14" transform="translate(-1 0)" />
         </svg>
         <p className="range-scale">
           <span>0 d</span>

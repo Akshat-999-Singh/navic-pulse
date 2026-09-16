@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
+import { healthColor, satelliteHealth } from './health.js'
 
 const SEVERITY_RANK = { critical: 0, warning: 1, normal: 2 }
 
@@ -55,7 +56,11 @@ export function OrbitText({ orbit }) {
 }
 
 export function ClockPill({ clockType }) {
-  return <span className="pill">{CLOCK_LABEL[clockType] ?? clockType}</span>
+  return (
+    <span className="pill" data-clock={clockType}>
+      {CLOCK_LABEL[clockType] ?? clockType}
+    </span>
+  )
 }
 
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0')
@@ -106,9 +111,16 @@ function ButtonGroup({ label, options, value, onChange }) {
 function SatelliteCard({ satellite, onSelect }) {
   const ratio = satellite.threshold > 0 ? satellite.anomaly_score / satellite.threshold : 0
   const fill = Math.min(Math.max(ratio, 0), 1) * 100
+  // useId output contains characters that are awkward inside url(#...).
+  const gradientId = `score-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
 
   return (
-    <button type="button" className="sat-card" onClick={() => onSelect(satellite.id)}>
+    <button
+      type="button"
+      className="sat-card"
+      data-severity={satellite.severity}
+      onClick={() => onSelect(satellite.id)}
+    >
       <span className="sat-head">
         <span className="sat-id">{satellite.id}</span>
         <ClockPill clockType={satellite.clock_type} />
@@ -133,9 +145,15 @@ function SatelliteCard({ satellite, onSelect }) {
             <span className="sat-muted"> / threshold {satellite.threshold.toFixed(2)}</span>
           </span>
         </span>
-        <svg className="score-bar" viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true">
-          <rect className="score-track" width="100" height="4" />
-          <rect className="score-fill" width={fill} height="4" />
+        <svg className="bar" aria-hidden="true">
+          <defs>
+            <linearGradient id={gradientId}>
+              <stop offset="0" className="stop-h0" />
+              <stop offset="1" stopColor={healthColor(satelliteHealth(satellite).latest)} />
+            </linearGradient>
+          </defs>
+          <rect className="bar-track" width="100%" height="14" rx="7" />
+          <rect width={`${fill}%`} height="14" rx="7" fill={`url(#${gradientId})`} />
         </svg>
       </span>
 

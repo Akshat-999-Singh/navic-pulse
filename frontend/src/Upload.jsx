@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { PRECOMPUTED_NOTE, parseTelemetryCsv } from './data.js'
+import ConstellationRail from './ConstellationRail.jsx'
 
 const MAX_BYTES = 4 * 1024 * 1024
 const SAMPLE_URL = '/sample-batch.csv'
@@ -56,7 +57,7 @@ function Field({ id, label, children }) {
   )
 }
 
-export default function Upload({ hidden, onComplete }) {
+export default function Upload({ run, hidden, onComplete }) {
   const inputRef = useRef(null)
   const [file, setFile] = useState(null) // { name, bytes, parsed }
   const [fileError, setFileError] = useState(null)
@@ -153,167 +154,175 @@ export default function Upload({ hidden, onComplete }) {
   const setField = (key) => (event) => setMetadata((m) => ({ ...m, [key]: event.target.value }))
 
   return (
-    <main hidden={hidden} className="view upload">
-      <header className="intake-header">
-        <h1>Telemetry intake</h1>
-        <p className="lede">
-          A batch of satellite clock telemetry is validated and inspected here: required columns,
-          day ordering, duplicate days, file size and delivery cadence.
-        </p>
-      </header>
-
-      <section className="intake-section" aria-labelledby="file-heading">
-        <h2 id="file-heading">Batch file</h2>
-        <button
-          type="button"
-          className="drop-zone"
-          data-dragging={dragging}
-          onClick={() => inputRef.current?.click()}
-          onDragEnter={(event) => {
-            event.preventDefault()
-            setDragging(true)
-          }}
-          onDragOver={(event) => event.preventDefault()}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(event) => {
-            event.preventDefault()
-            setDragging(false)
-            handleFiles(event.dataTransfer.files)
-          }}
-        >
-          <span className="drop-title">Drop a .csv file here</span>
-          <span className="quiet">or click to browse · one file, under 4 MB</span>
-        </button>
-        <input
-          ref={inputRef}
-          className="visually-hidden"
-          type="file"
-          accept=".csv"
-          tabIndex={-1}
-          aria-hidden="true"
-          onChange={(event) => {
-            handleFiles(event.target.files)
-            // Allow the same file to be chosen again after edits on disk.
-            event.target.value = ''
-          }}
-        />
-
-        {file && (
-          <p className="file-summary">
-            <span>{file.name}</span>
-            <span className="quiet">{(file.bytes / 1024).toFixed(1)} KB</span>
-            {file.parsed && <span className="quiet">{file.parsed.rows.length} rows</span>}
+    <main hidden={hidden} className="view upload split">
+      <div className="split-primary">
+        <header className="intake-header">
+          <h1>Telemetry intake</h1>
+          <p className="lede">
+            A batch of satellite clock telemetry is validated and inspected here: required columns,
+            day ordering, duplicate days, file size and delivery cadence.
           </p>
-        )}
-        {fileError && (
-          <p className="inline-error" role="alert">
-            {fileError}
-          </p>
-        )}
-      </section>
+        </header>
 
-      <section className="intake-section" aria-labelledby="metadata-heading">
-        <h2 id="metadata-heading">Source satellite</h2>
-        <p className="quiet">Operator-supplied reference data; not derived from the file.</p>
-        <div className="fields">
-          <Field id="meta-name" label="Satellite name">
-            <input
-              id="meta-name"
-              type="text"
-              required
-              value={metadata.name}
-              onChange={setField('name')}
-              autoComplete="off"
-            />
-          </Field>
-          <Field id="meta-launch" label="Launch date">
-            <input
-              id="meta-launch"
-              type="date"
-              required
-              value={metadata.launchDate}
-              onChange={setField('launchDate')}
-            />
-          </Field>
-          <Field id="meta-clock" label="Clock type">
-            <select id="meta-clock" required value={metadata.clockType} onChange={setField('clockType')}>
-              <option value="">Select…</option>
-              <option value="imported">Imported</option>
-              <option value="irafs">Indigenous iRAFS</option>
-            </select>
-          </Field>
-          <Field id="meta-orbit" label="Orbit">
-            <select id="meta-orbit" required value={metadata.orbit} onChange={setField('orbit')}>
-              <option value="">Select…</option>
-              <option value="GEO">GEO</option>
-              <option value="IGSO">IGSO</option>
-              <option value="not-on-station">Not on station</option>
-            </select>
-          </Field>
-        </div>
-      </section>
+        <section className="intake-section" aria-labelledby="file-heading">
+          <h2 id="file-heading">Batch file</h2>
+          <button
+            type="button"
+            className="drop-zone"
+            data-dragging={dragging}
+            onClick={() => inputRef.current?.click()}
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setDragging(true)
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault()
+              setDragging(false)
+              handleFiles(event.dataTransfer.files)
+            }}
+          >
+            <span className="drop-title">Drop a .csv file here</span>
+            <span className="quiet">or click to browse · one file, under 4 MB</span>
+          </button>
+          <input
+            ref={inputRef}
+            className="visually-hidden"
+            type="file"
+            accept=".csv"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(event) => {
+              handleFiles(event.target.files)
+              // Allow the same file to be chosen again after edits on disk.
+              event.target.value = ''
+            }}
+          />
 
-      <section className="intake-section" aria-labelledby="cadence-heading">
-        <h2 id="cadence-heading">Cadence</h2>
-        <div className="segmented" role="group" aria-labelledby="cadence-heading">
-          {CADENCES.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={cadenceId === option.id}
-              onClick={() => setCadenceId(option.id)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <p className="quiet">
-          The cadence your telemetry feed delivers at. Uploaded rows are validated against it.
-        </p>
-      </section>
-
-      <section className="intake-section" aria-labelledby="validation-heading" aria-live="polite">
-        <h2 id="validation-heading">Validation</h2>
-        {!file && !fileError && <p className="quiet">No batch selected.</p>}
-        {file?.parsed && issues.length === 0 && (
-          <p className="validation-ok">
-            <span className="severity-dot" data-severity="normal" aria-hidden="true" />
-            Valid: {file.parsed.rows.length} rows · {file.parsed.satellites.length} satellite
-            {file.parsed.satellites.length === 1 ? '' : 's'} ({file.parsed.satellites.join(', ')})
-          </p>
-        )}
-        {issues.length > 0 && (
-          <>
-            <p className="validation-bad">
-              <span className="severity-dot" data-severity="critical" aria-hidden="true" />
-              {issues.length} problem{issues.length === 1 ? '' : 's'} found
+          {file && (
+            <p className="file-summary">
+              <span>{file.name}</span>
+              <span className="quiet">{(file.bytes / 1024).toFixed(1)} KB</span>
+              {file.parsed && <span className="quiet">{file.parsed.rows.length} rows</span>}
             </p>
-            <ul className="issues">
-              {issues.map((issue, i) => (
-                <li key={i}>
-                  <span className="issue-row">{issue.label}</span>
-                  <span>{issue.text}</span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-        {clean && !metadataComplete && (
-          <p className="quiet">Complete every source satellite field to continue.</p>
-        )}
-      </section>
+          )}
+          {fileError && (
+            <p className="inline-error" role="alert">
+              {fileError}
+            </p>
+          )}
+        </section>
 
-      <section className="intake-actions" aria-label="Actions">
-        <div className="action-buttons">
-          <button type="button" className="primary" disabled={!canSubmit} onClick={() => onComplete()}>
-            Validate and continue
-          </button>
-          <button type="button" className="secondary" disabled={loadingSample} onClick={loadSample}>
-            {loadingSample ? 'Loading sample…' : 'Load sample batch'}
-          </button>
+        <section className="intake-section" aria-labelledby="metadata-heading">
+          <h2 id="metadata-heading">Source satellite</h2>
+          <p className="quiet">Operator-supplied reference data; not derived from the file.</p>
+          <div className="fields">
+            <Field id="meta-name" label="Satellite name">
+              <input
+                id="meta-name"
+                type="text"
+                required
+                value={metadata.name}
+                onChange={setField('name')}
+                autoComplete="off"
+              />
+            </Field>
+            <Field id="meta-launch" label="Launch date">
+              <input
+                id="meta-launch"
+                type="date"
+                required
+                value={metadata.launchDate}
+                onChange={setField('launchDate')}
+              />
+            </Field>
+            <Field id="meta-clock" label="Clock type">
+              <select id="meta-clock" required value={metadata.clockType} onChange={setField('clockType')}>
+                <option value="">Select…</option>
+                <option value="imported">Imported</option>
+                <option value="irafs">Indigenous iRAFS</option>
+              </select>
+            </Field>
+            <Field id="meta-orbit" label="Orbit">
+              <select id="meta-orbit" required value={metadata.orbit} onChange={setField('orbit')}>
+                <option value="">Select…</option>
+                <option value="GEO">GEO</option>
+                <option value="IGSO">IGSO</option>
+                <option value="not-on-station">Not on station</option>
+              </select>
+            </Field>
+          </div>
+        </section>
+
+        <section className="intake-section" aria-labelledby="cadence-heading">
+          <h2 id="cadence-heading">Cadence</h2>
+          <div className="segmented" role="group" aria-labelledby="cadence-heading">
+            {CADENCES.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={cadenceId === option.id}
+                onClick={() => setCadenceId(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p className="quiet">
+            The cadence your telemetry feed delivers at. Uploaded rows are validated against it.
+          </p>
+        </section>
+
+        <section className="intake-section" aria-labelledby="validation-heading" aria-live="polite">
+          <h2 id="validation-heading">Validation</h2>
+          {!file && !fileError && <p className="quiet">No batch selected.</p>}
+          {file?.parsed && issues.length === 0 && (
+            <p className="validation-ok">
+              <span className="severity-dot" data-severity="normal" aria-hidden="true" />
+              Valid: {file.parsed.rows.length} rows · {file.parsed.satellites.length} satellite
+              {file.parsed.satellites.length === 1 ? '' : 's'} ({file.parsed.satellites.join(', ')})
+            </p>
+          )}
+          {issues.length > 0 && (
+            <>
+              <p className="validation-bad">
+                <span className="severity-dot" data-severity="critical" aria-hidden="true" />
+                {issues.length} problem{issues.length === 1 ? '' : 's'} found
+              </p>
+              <ul className="issues">
+                {issues.map((issue, i) => (
+                  <li key={i}>
+                    <span className="issue-row">{issue.label}</span>
+                    <span>{issue.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {clean && !metadataComplete && (
+            <p className="quiet">Complete every source satellite field to continue.</p>
+          )}
+        </section>
+
+        <section className="intake-actions" aria-label="Actions">
+          <div className="action-buttons">
+            <button type="button" className="primary" disabled={!canSubmit} onClick={() => onComplete()}>
+              Validate and continue
+            </button>
+            <button type="button" className="secondary" disabled={loadingSample} onClick={loadSample}>
+              {loadingSample ? 'Loading sample…' : 'Load sample batch'}
+            </button>
+          </div>
+          <p className="precomputed-note">{PRECOMPUTED_NOTE}</p>
+        </section>
+      </div>
+
+      <aside className="split-aside">
+        <div className="split-sticky">
+          <ConstellationRail run={run} />
         </div>
-        <p className="precomputed-note">{PRECOMPUTED_NOTE}</p>
-      </section>
+      </aside>
     </main>
   )
 }

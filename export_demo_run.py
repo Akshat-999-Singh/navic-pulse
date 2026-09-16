@@ -88,12 +88,14 @@ REFERENCE = {
 CLOCK_TYPE = {"imported": "imported", "indigenous": "irafs"}
 SEVERITY_RANK = {"normal": 0, "warning": 1, "critical": 2}
 
-# Frontend :root tokens (frontend/src/styles.css), so the plots sit on the page.
-GROUND = "#0d0d0f"
-INK = (236 / 255, 230 / 255, 218 / 255)
-ACCENT = "#5fa8f0"
-WARNING = "#f0ac5f"
-CRITICAL = "#f05f5f"
+# Frontend :root tokens (frontend/src/styles.css), so the plots belong to the
+# interface: the figure fills the --sunken well the <img> sits in.
+SUNKEN = "#ECECE8"
+LINE = "#C5C5BC"  # --line-firm
+INK = (26 / 255, 28 / 255, 26 / 255)
+ACCENT = "#16564E"
+THRESHOLD = "#8A5A0A"  # a darkened --h2, so the dashes hold 3:1 on the well
+CRITICAL = "#BC2E22"  # --h4
 
 
 # ---------------------------------------------------------------------------
@@ -197,32 +199,32 @@ def select_windows(flagged, keep):
 
 def plot_png(days, scores, flagged, threshold, confirmed, dpi):
     """Reconstruction error over time, threshold, flagged spans, confirmed onset."""
-    muted = (*INK, 0.6)
+    text = (*INK, 0.7)
     fig, ax = plt.subplots(figsize=(8, 3), dpi=dpi)
-    fig.patch.set_facecolor(GROUND)
-    ax.set_facecolor(GROUND)
+    fig.patch.set_facecolor(SUNKEN)
+    ax.set_facecolor(SUNKEN)
 
     edges = np.diff(np.concatenate([[0], flagged.astype(int), [0]]))
     for start, stop in zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1)):
-        ax.axvspan(days[start], days[stop - 1], color=WARNING, alpha=0.16, linewidth=0)
+        ax.axvspan(days[start], days[stop - 1], color=CRITICAL, alpha=0.12, linewidth=0)
 
-    ax.plot(days, scores, color=ACCENT, linewidth=0.9)
-    ax.axhline(threshold, color=muted, linestyle=":", linewidth=1.2)
+    ax.plot(days, scores, color=(*INK, 0.85), linewidth=0.9)
+    ax.axhline(threshold, color=THRESHOLD, linestyle="--", linewidth=1.2)
     if confirmed is not None:
-        ax.axvline(days[confirmed], color=CRITICAL, linestyle="--", linewidth=1.3)
+        ax.axvline(days[confirmed], color=ACCENT, linestyle="-", linewidth=1.3)
 
     ax.set_yscale("log")
     ax.set_xlim(days[0], days[-1])
-    ax.set_xlabel("Window start day", color=muted, fontsize=9)
-    ax.set_ylabel("Reconstruction error", color=muted, fontsize=9)
-    ax.tick_params(colors=muted, labelsize=8)
+    ax.set_xlabel("Window start day", color=text, fontsize=9)
+    ax.set_ylabel("Reconstruction error", color=text, fontsize=9)
+    ax.tick_params(which="both", color=LINE, labelcolor=text, labelsize=8)
     for side, spine in ax.spines.items():
         spine.set_visible(side in ("left", "bottom"))
-        spine.set_color((*INK, 0.14))
+        spine.set_color(LINE)
     fig.tight_layout()
 
     buffer = io.BytesIO()
-    fig.savefig(buffer, format="png", dpi=dpi, facecolor=GROUND)
+    fig.savefig(buffer, format="png", dpi=dpi, facecolor=SUNKEN)
     plt.close(fig)
     return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 

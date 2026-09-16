@@ -51,7 +51,7 @@ export default function App() {
       {/* All views stay mounted so they keep internal state; inactive ones are hidden. */}
       {VIEWS.map(({ id }) => {
         if (id === 'upload') {
-          return <Upload key={id} hidden={view !== id} onComplete={() => setView('pipeline')} />
+          return <Upload key={id} run={run} hidden={view !== id} onComplete={() => setView('pipeline')} />
         }
         if (id === 'constellation') {
           return (

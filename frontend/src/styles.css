@@ -1,22 +1,59 @@
 :root {
-  --ground: #0d0d0f;
-  --ink: 236 230 218;
+  /* Neutrals: cool off-white chrome, so the health spectrum carries the colour. */
+  --paper: #F7F7F5;
+  --surface: #FFFFFF;
+  --raised: #FFFFFF; /* cards: separated from --paper by border, not tone */
+  --sunken: #ECECE8;
+  --line: #E0E0DA; /* panel borders */
+  --line-firm: #C5C5BC; /* control borders, bar fills that are not health */
+
+  /* Ink. Muted and faint clear 4.5:1 on --paper, --surface, --sunken and
+     --accent-soft. Faint is 0.62, the lowest alpha that does. */
+  --ink: 26 28 26;
   --text: rgb(var(--ink));
-  --text-muted: rgb(var(--ink) / 0.6);
-  --text-faint: rgb(var(--ink) / 0.38);
-  --hairline: rgb(var(--ink) / 0.14);
-  --accent: #5fa8f0;
-  --status-normal: #4ade80;
-  --status-warning: #f0ac5f;
-  --status-critical: #f05f5f;
-  --status-unknown: rgb(var(--ink) / 0.3);
+  --text-muted: rgb(var(--ink) / 0.72);
+  --text-faint: rgb(var(--ink) / 0.62);
+
+  /* Health spectrum, healthy to critical. Status is a position on this scale:
+     normal --h0, warning --h2, critical --h4. health.js interpolates between
+     these stops, reading them from here. */
+  --h0: #167C4A;
+  --h1: #6FA320;
+  --h2: #D19A0E;
+  --h3: #DE6F1C;
+  --h4: #BC2E22;
+
+  /* The detection threshold on charts: a darkened --h2, so a 1px dash holds
+     5:1 on --sunken. */
+  --threshold: #8A5A0A;
+
+  /* Interaction: deep teal-green, never a status colour. */
+  --accent: #16564E;
+  --accent-soft: #E6EFED;
+
+  /* Identity: clock type only. */
+  --clock-imported: #6E6E66;
+  --clock-irafs: #16564E;
+
+  /* Spacing scale. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-card: 10px;
+  --radius-control: 8px;
+  --bar: 14px;
+
   --serif: 'Newsreader', Georgia, serif;
   --sans: 'Inter Variable', system-ui, -apple-system, sans-serif;
   --ease: cubic-bezier(0.2, 0, 0, 1);
-  --quick: 140ms;
   --settle: 180ms;
   --gutter: clamp(16px, 5vw, 64px);
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 *,
@@ -27,7 +64,7 @@
 
 html,
 body {
-  background: var(--ground);
+  background: var(--paper);
 }
 
 body {
@@ -54,9 +91,10 @@ button {
   cursor: pointer;
 }
 
+/* --accent is at least 7:1 on white, --paper and --sunken. */
 :focus-visible {
-  outline: 1.5px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Beats later display rules (e.g. grid) so hidden views stay hidden. */
@@ -77,8 +115,9 @@ button {
 
 .banner {
   margin: 0;
-  padding: 8px var(--gutter);
-  border-bottom: 1px solid var(--hairline);
+  padding: var(--space-2) var(--gutter);
+  border-bottom: 1px solid var(--line);
+  background: var(--sunken);
   color: var(--text-muted);
   font-size: 13px;
 }
@@ -88,8 +127,9 @@ button {
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px 32px;
-  padding: 20px var(--gutter);
+  gap: var(--space-3) var(--space-6);
+  padding: var(--space-5) var(--gutter);
+  border-bottom: 1px solid var(--line);
 }
 
 .wordmark {
@@ -103,12 +143,15 @@ button {
 .views {
   display: flex;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: var(--space-5);
 }
 
 .views button {
   color: var(--text-muted);
-  transition: color var(--quick) var(--ease);
+}
+
+.views button:hover {
+  color: var(--text);
 }
 
 .views button[aria-current='page'] {
@@ -132,7 +175,7 @@ button {
   }
 }
 
-/* Constellation */
+/* Shared */
 
 .quiet {
   margin: 0;
@@ -146,27 +189,128 @@ button {
   font-size: 13px;
 }
 
+/* Panels: white on paper, separated by a border. */
+.summary-strip,
+.clock-comparison,
+.controls,
+.channel-bars,
+.prognosis {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+/* Bars: every progress, score and contribution bar is a 14px pill on a sunken
+   track. Fills are SVG rects with rx 7, sized in percent so the ends stay round. */
+.bar {
+  display: block;
+  width: 100%;
+  height: var(--bar);
+  overflow: visible;
+}
+
+.bar-track {
+  fill: var(--sunken);
+}
+
+.stop-h0 {
+  stop-color: var(--h0);
+}
+
+.stop-h1 {
+  stop-color: var(--h1);
+}
+
+.stop-h2 {
+  stop-color: var(--h2);
+}
+
+.stop-h3 {
+  stop-color: var(--h3);
+}
+
+.stop-h4 {
+  stop-color: var(--h4);
+}
+
+/* Status is a position on the spectrum. */
+.severity-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line-firm);
+}
+
+.severity-dot[data-severity='normal'] {
+  background: var(--h0);
+}
+
+.severity-dot[data-severity='warning'] {
+  background: var(--h2);
+}
+
+.severity-dot[data-severity='critical'] {
+  background: var(--h4);
+}
+
+/* Controls */
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  overflow: hidden;
+  border: 1px solid var(--line-firm);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+}
+
+.segmented button {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--line-firm);
+}
+
+.segmented button:hover {
+  color: var(--text);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Inset so the ring is not clipped by the group's rounded overflow. */
+.segmented button:focus-visible {
+  outline-offset: -3px;
+}
+
+/* Constellation */
+
 .constellation {
-  gap: 32px;
+  gap: var(--space-6);
 }
 
 .summary-strip {
   display: grid;
-  gap: 16px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--hairline);
+  gap: var(--space-4);
+  padding: var(--space-5);
 }
 
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 32px;
+  gap: var(--space-6);
 }
 
 .stat {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
 }
 
@@ -182,7 +326,7 @@ button {
 
 .lead-time {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .lead-time-headline {
@@ -192,7 +336,8 @@ button {
 
 .clock-comparison {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
+  padding: var(--space-5);
 }
 
 .clock-comparison p:first-child {
@@ -202,73 +347,73 @@ button {
 .controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 32px;
+  gap: var(--space-4) var(--space-6);
+  padding: var(--space-4) var(--space-5);
 }
 
 .control {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .control-label {
-  color: var(--text-faint);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.segmented {
-  display: flex;
-  flex-wrap: wrap;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-}
-
-.segmented button {
-  padding: 6px 12px;
   color: var(--text-muted);
-  font-size: 14px;
-  transition: color var(--quick) var(--ease);
-}
-
-.segmented button + button {
-  border-left: 1px solid var(--hairline);
-}
-
-.segmented button:hover {
-  color: var(--text);
-}
-
-.segmented button[aria-pressed='true'] {
-  color: var(--accent);
+  font-size: 13px;
 }
 
 .sat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
 }
 
+/* Cards: white, 10px radius, 1px border; the 6px left edge is the severity. */
 .sat-card {
   display: grid;
   align-content: start;
-  gap: 10px;
-  padding: 18px;
-  border: 1px solid var(--hairline);
-  border-radius: 8px;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-5) calc(var(--space-5) - 5px);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--line-firm);
+  border-radius: var(--radius-card);
+  background: var(--raised);
   text-align: left;
-  transition: border-color var(--settle) var(--ease);
+  transition:
+    border-color var(--settle) var(--ease),
+    background-color var(--settle) var(--ease);
 }
 
+.sat-card[data-severity='normal'] {
+  border-left-color: var(--h0);
+}
+
+.sat-card[data-severity='warning'] {
+  border-left-color: var(--h2);
+}
+
+.sat-card[data-severity='critical'] {
+  border-left-color: var(--h4);
+}
+
+/* Hover recolours three sides only, so the severity edge never changes. */
 .sat-card:hover {
-  border-color: var(--text-faint);
+  border-top-color: var(--accent);
+  border-right-color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sat-card {
+    transition: none;
+  }
 }
 
 .sat-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .sat-id {
@@ -279,11 +424,16 @@ button {
 
 .pill {
   flex-shrink: 0;
-  padding: 2px 8px;
-  border: 1px solid var(--hairline);
+  padding: 1px var(--space-2);
+  border: 1px solid currentColor;
   border-radius: 999px;
-  color: var(--text-muted);
+  background: var(--surface);
+  color: var(--clock-imported);
   font-size: 12px;
+}
+
+.pill[data-clock='irafs'] {
+  color: var(--clock-irafs);
 }
 
 .sat-meta,
@@ -292,41 +442,26 @@ button {
   font-size: 13px;
 }
 
+.orbit-qualifier {
+  color: var(--text-faint);
+}
+
 .sat-severity {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   text-transform: capitalize;
-}
-
-.severity-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--status-unknown);
-}
-
-.severity-dot[data-severity='normal'] {
-  background: var(--status-normal);
-}
-
-.severity-dot[data-severity='warning'] {
-  background: var(--status-warning);
-}
-
-.severity-dot[data-severity='critical'] {
-  background: var(--status-critical);
 }
 
 .sat-score {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .sat-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--space-3);
   font-size: 14px;
 }
 
@@ -339,41 +474,22 @@ button {
   text-align: right;
 }
 
-.score-bar {
-  display: block;
-  width: 100%;
-  height: 4px;
-}
-
-.score-track {
-  fill: var(--hairline);
-}
-
-.score-fill {
-  fill: var(--accent);
-}
-
-.orbit-qualifier {
-  color: var(--text-faint);
-}
-
 /* Satellite */
 
 .satellite {
-  gap: 40px;
+  gap: var(--space-7);
 }
 
 .detail-header {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .back {
   justify-self: start;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   color: var(--text-muted);
   font-size: 14px;
-  transition: color var(--quick) var(--ease);
 }
 
 .back:hover {
@@ -395,7 +511,7 @@ button {
 
 .detail-section {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
   min-width: 0;
 }
 
@@ -406,32 +522,158 @@ button {
   font-weight: 400;
 }
 
-.timeline-plot {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  border: 1px solid var(--hairline);
-  border-radius: 8px;
+/* Anomaly chart: a sunken well; the SVG inside is sized to the well's pixel
+   width, so its text stays 12px at every width. */
+.anomaly-chart {
+  min-width: 0;
+  padding: var(--space-3) var(--space-2) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--sunken);
 }
 
+.anomaly-svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.chart-axis {
+  stroke: var(--line-firm);
+  stroke-width: 1;
+}
+
+.chart-tick {
+  stroke: var(--line-firm);
+  stroke-width: 1;
+}
+
+.chart-label {
+  fill: var(--text-faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-marker-label {
+  fill: var(--text-muted);
+}
+
+.chart-trace {
+  fill: none;
+  stroke: rgb(var(--ink) / 0.85);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-threshold {
+  stroke: var(--threshold);
+  stroke-width: 1.25;
+  stroke-dasharray: 6 4;
+}
+
+.chart-threshold-label {
+  fill: var(--threshold);
+}
+
+.chart-flagged {
+  fill: var(--h4);
+  fill-opacity: 0.12;
+}
+
+.chart-confirmed {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.chart-baseline {
+  stroke: var(--clock-imported);
+  stroke-width: 1.5;
+  stroke-dasharray: 1.5 3;
+  stroke-linecap: round;
+}
+
+.chart-selected {
+  stroke-width: 1;
+  stroke-opacity: 0.7;
+}
+
+.chart-selected-dot {
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.chart-hit {
+  fill: transparent;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+/* The scrubber track is the satellite's life on the health spectrum; the thumb
+   and readout take the colour at the selected window. The gradient and both
+   colours are data-driven custom properties set on .scrubber. */
 .scrubber {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .scrubber input[type='range'] {
   width: 100%;
+  height: 24px;
   margin: 0;
-  accent-color: var(--accent);
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.scrubber input[type='range']::-webkit-slider-runnable-track {
+  height: var(--bar);
+  border-radius: 7px;
+  background: var(--track-gradient, var(--sunken));
+}
+
+.scrubber input[type='range']::-moz-range-track {
+  height: var(--bar);
+  border-radius: 7px;
+  background: var(--track-gradient, var(--sunken));
+}
+
+.scrubber input[type='range']::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  margin-top: -5px;
+  border: 4px solid var(--surface);
+  border-radius: 50%;
+  background: var(--thumb-color, var(--accent));
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.scrubber input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 4px solid var(--surface);
+  border-radius: 50%;
+  background: var(--thumb-color, var(--accent));
+}
+
+.scrubber input[type='range']:focus-visible {
+  outline-offset: 4px;
 }
 
 .window-readout {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 4px 16px;
+  gap: var(--space-1) var(--space-4);
   margin: 0;
   font-variant-numeric: tabular-nums;
+}
+
+.window-value {
+  color: var(--readout-color, var(--text));
+  font-weight: 500;
 }
 
 .flag-state {
@@ -439,39 +681,40 @@ button {
 }
 
 .flag-state[data-flagged='true'] {
-  color: var(--status-warning);
+  color: var(--h4);
 }
 
 .jump-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .jump-buttons button {
-  padding: 6px 12px;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  color: var(--text-muted);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line-firm);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text);
   font-size: 14px;
-  transition: color var(--quick) var(--ease), border-color var(--quick) var(--ease);
 }
 
 .jump-buttons button:hover:not(:disabled) {
-  border-color: var(--text-faint);
-  color: var(--text);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .jump-buttons button:disabled {
+  border-color: var(--line);
   color: var(--text-faint);
   cursor: not-allowed;
 }
 
 .channel-bars {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   margin: 0;
-  padding: 0;
+  padding: var(--space-5);
   list-style: none;
 }
 
@@ -479,7 +722,7 @@ button {
   display: grid;
   grid-template-columns: minmax(0, 180px) minmax(0, 1fr) 56px;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
   font-size: 14px;
 }
 
@@ -488,18 +731,9 @@ button {
   color: var(--text-muted);
 }
 
-.channel-svg {
-  display: block;
-  width: 100%;
-  height: 8px;
-}
-
-.channel-track {
-  fill: var(--hairline);
-}
-
+/* Contribution is not health, so it never uses the spectrum. */
 .channel-fill {
-  fill: var(--text-faint);
+  fill: var(--line-firm);
 }
 
 .channel-fill-top {
@@ -511,17 +745,19 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Estimate, caveat and band share one box so they cannot be read apart. */
 .prognosis {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: 560px;
+  padding: var(--space-5);
 }
 
 .prognosis-estimate {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 12px;
+  gap: var(--space-1) var(--space-3);
   margin: 0;
 }
 
@@ -542,18 +778,11 @@ button {
 }
 
 .range-bar {
-  display: block;
-  width: 100%;
-  height: 12px;
-  margin-top: 8px;
-}
-
-.range-track {
-  fill: var(--hairline);
+  margin-top: var(--space-3);
 }
 
 .range-band {
-  fill: var(--text-faint);
+  fill: var(--line-firm);
 }
 
 .range-mark {
@@ -571,7 +800,7 @@ button {
 @media (max-width: 639px) {
   .channel-bar {
     grid-template-columns: minmax(0, 1fr) 56px;
-    gap: 4px 12px;
+    gap: var(--space-1) var(--space-3);
   }
 
   .channel-name {
@@ -581,14 +810,16 @@ button {
 
 /* Upload */
 
-.upload {
-  gap: 40px;
+.upload .split-primary {
+  display: grid;
+  gap: var(--space-7);
+  min-width: 0;
   max-width: 880px;
 }
 
 .intake-header {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .lede {
@@ -600,7 +831,7 @@ button {
 
 .intake-section {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -614,17 +845,18 @@ button {
 .drop-zone {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 40px 16px;
-  border: 1px dashed var(--text-faint);
-  border-radius: 8px;
+  gap: var(--space-2);
+  padding: var(--space-7) var(--space-4);
+  border: 1px dashed var(--line-firm);
+  border-radius: var(--radius-card);
+  background: var(--surface);
   text-align: center;
-  transition: border-color var(--quick) var(--ease), color var(--quick) var(--ease);
 }
 
 .drop-zone:hover,
 .drop-zone[data-dragging='true'] {
   border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .drop-title {
@@ -634,49 +866,46 @@ button {
 .file-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
+  gap: var(--space-1) var(--space-4);
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .inline-error {
   margin: 0;
-  color: var(--status-critical);
+  color: var(--h4);
 }
 
 .fields {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px 24px;
+  gap: var(--space-4) var(--space-5);
 }
 
 .field {
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
 .field label {
-  color: var(--text-faint);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .field input,
 .field select {
   width: 100%;
   min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  background: var(--ground);
-  transition: border-color var(--quick) var(--ease);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-firm);
+  border-radius: var(--radius-control);
+  background: var(--surface);
 }
 
 .field input:hover,
 .field select:hover {
-  border-color: var(--text-faint);
+  border-color: var(--accent);
 }
 
 .intake-section .segmented {
@@ -688,13 +917,13 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
 }
 
 .issues {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -703,52 +932,59 @@ button {
 .issues li {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
   font-size: 14px;
   overflow-wrap: anywhere;
 }
 
 .issue-row {
-  color: var(--status-critical);
+  color: var(--h4);
   font-variant-numeric: tabular-nums;
 }
 
 .intake-actions {
   display: grid;
-  gap: 16px;
-  padding-top: 24px;
-  border-top: 1px solid var(--hairline);
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
 }
 
 .action-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .action-buttons button {
-  padding: 10px 18px;
-  border: 1px solid var(--hairline);
-  border-radius: 6px;
-  transition: color var(--quick) var(--ease), border-color var(--quick) var(--ease);
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--line-firm);
+  border-radius: var(--radius-control);
+  background: var(--surface);
 }
 
 .action-buttons .primary {
   border-color: var(--accent);
-  color: var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+}
+
+/* The ring matches the fill, so open a clear paper gap between them. */
+.action-buttons .primary:focus-visible {
+  outline-offset: 4px;
 }
 
 .action-buttons .secondary {
-  color: var(--text-muted);
-}
-
-.action-buttons button:hover:not(:disabled) {
-  border-color: var(--text);
   color: var(--text);
 }
 
+.action-buttons .secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .action-buttons button:disabled {
-  border-color: var(--hairline);
+  border-color: var(--line);
+  background: var(--sunken);
   color: var(--text-faint);
   cursor: not-allowed;
 }
@@ -762,8 +998,11 @@ button {
 
 /* Pipeline */
 
-.pipeline {
-  gap: 40px;
+.pipeline .split-primary {
+  display: grid;
+  align-content: start;
+  gap: var(--space-7);
+  min-width: 0;
   max-width: 880px;
 }
 
@@ -778,7 +1017,7 @@ button {
   position: relative;
   display: grid;
   gap: 2px;
-  padding: 0 0 24px 32px;
+  padding: 0 0 var(--space-5) var(--space-6);
 }
 
 .stage:last-child {
@@ -791,21 +1030,22 @@ button {
   position: absolute;
   top: 6px;
   left: 0;
-  width: 11px;
-  height: 11px;
-  border: 1px solid var(--text-faint);
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--line-firm);
   border-radius: 50%;
+  background: var(--paper);
 }
 
-/* The hairline connector, running from this mark down to the next. */
+/* The connector: a 1px rule from this mark down to the next. */
 .stage::after {
   content: '';
   position: absolute;
-  top: 21px;
-  bottom: 4px;
-  left: 5px;
+  top: 22px;
+  bottom: var(--space-1);
+  left: 6px;
   width: 1px;
-  background: var(--hairline);
+  background: var(--line-firm);
 }
 
 .stage:last-child::after {
@@ -834,9 +1074,109 @@ button {
 
 .real-list {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: 72ch;
   margin: 0;
-  padding-left: 20px;
+  padding-left: var(--space-5);
   color: var(--text-muted);
+}
+
+/* Two-column views with the constellation health rail */
+
+/* Below 960px the rail column does not exist: one column, no gap. */
+.split-aside {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .split {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--gutter);
+  }
+
+  /* Stretch the column to the row height so the rail can stick within it. */
+  .split-aside {
+    display: block;
+    align-self: stretch;
+  }
+
+  .split-sticky {
+    position: sticky;
+    top: var(--gutter);
+  }
+}
+
+.rail {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+.rail-heading {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.rail-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rail-row {
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: var(--space-3);
+  min-height: 40px;
+  padding: var(--space-2) 0;
+  font-size: 14px;
+}
+
+.rail-row + .rail-row {
+  border-top: 1px solid var(--line);
+}
+
+.rail-bar {
+  display: block;
+  width: 6px;
+  height: 28px;
+}
+
+.rail-id {
+  font-family: var(--serif);
+  font-size: 17px;
+}
+
+.rail-severity {
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.rail-life {
+  min-width: 56px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.health-key {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-top: var(--space-2);
+}
+
+.health-key-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-faint);
+  font-size: 13px;
 }

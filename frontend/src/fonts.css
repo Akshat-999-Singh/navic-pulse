@@ -1,0 +1,19 @@
+/*
+ * Latin-only Inter. @fontsource-variable/inter ships no Latin-only stylesheet --
+ * its wght.css declares every subset (Cyrillic, Greek, Vietnamese, Latin-ext),
+ * which this interface never renders -- so the Latin face is declared here,
+ * copied from that package's wght.css.
+ *
+ * Characters outside this range fall back to the next font in --sans, so UI
+ * strings stay within it: write "sigma", not the Greek letter, and avoid
+ * arrows such as U+2190, which no Inter subset covers.
+ */
+@font-face {
+  font-family: 'Inter Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
