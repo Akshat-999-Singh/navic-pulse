@@ -1,0 +1,133 @@
+:root {
+  --ground: #0d0d0f;
+  --ink: 236 230 218;
+  --text: rgb(var(--ink));
+  --text-muted: rgb(var(--ink) / 0.6);
+  --text-faint: rgb(var(--ink) / 0.38);
+  --hairline: rgb(var(--ink) / 0.14);
+  --accent: #5fa8f0;
+  --status-normal: #4ade80;
+  --status-warning: #f0ac5f;
+  --status-critical: #f05f5f;
+  --status-unknown: rgb(var(--ink) / 0.3);
+  --serif: 'Newsreader', Georgia, serif;
+  --sans: 'Inter Variable', system-ui, -apple-system, sans-serif;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --quick: 140ms;
+  --settle: 180ms;
+  --gutter: clamp(16px, 5vw, 64px);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--ground);
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Beats later display rules (e.g. grid) so hidden views stay hidden. */
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/* Shell */
+
+.banner {
+  margin: 0;
+  padding: 8px var(--gutter);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px 32px;
+  padding: 20px var(--gutter);
+}
+
+.wordmark {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.views button {
+  color: var(--text-muted);
+  transition: color var(--quick) var(--ease);
+}
+
+.views button[aria-current='page'] {
+  color: var(--accent);
+}
+
+.view {
+  display: grid;
+  padding: var(--gutter);
+}
+
+.view h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+}
+
+@media (max-width: 639px) {
+  .views {
+    flex-wrap: wrap;
+  }
+}

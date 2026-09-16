@@ -29,3 +29,7 @@ Thumbs.db
 # version control.
 esa/
 galileo/
+
+# Frontend fixtures are authored, not generated -- these must be committed.
+!frontend/public/*.csv
+!frontend/public/*.json
