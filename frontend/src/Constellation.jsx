@@ -60,7 +60,7 @@ export function ClockPill({ clockType }) {
 
 const signed = (n) => (n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0')
 
-function leadTimeSummary(detail) {
+export function leadTimeSummary(detail) {
   const direction = detail.mean_days >= 0 ? 'earlier' : 'later'
   return (
     `Mean ${Math.abs(detail.mean_days)} d ${direction} than fixed-limit monitoring ` +
