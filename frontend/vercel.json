@@ -1,5 +1,11 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "framework": "vite"
+  "framework": "vite",
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 300,
+      "memory": 1024
+    }
+  }
 }
