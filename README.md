@@ -1,5 +1,5 @@
 # NavIC Pulse
-
+**Live demo:** https://navic-pulse.vercel.app
 NavIC Pulse watches the rubidium atomic clocks on NavIC navigation satellites
 and flags a degrading clock from its ground-segment telemetry. It trains an
 autoencoder on healthy satellites only, scores every 30-day telemetry window by
