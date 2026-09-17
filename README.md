@@ -1,5 +1,40 @@
 # NavIC Pulse
 **Live demo:** https://navic-pulse.vercel.app
+
+## Try the live demo
+
+The deployed app ships with a precomputed reference run of the ten real NavIC
+satellites, and you can also upload a batch and have it analysed live in the
+browser.
+
+1. Open the live link and go to **Upload**.
+2. Click **Load sample batch** for a quick check, or download
+   [`frontend/public/test-batch-irnss-1q.csv`](frontend/public/test-batch-irnss-1q.csv)
+   from this repo for the full demonstration.
+3. Fill the form with:
+
+   | Field | Value |
+   |---|---|
+   | Satellite name | IRNSS-1Q |
+   | Launch date | 2022-09-01 |
+   | Clock type | Imported |
+   | Orbit | IGSO |
+   | Cadence | Daily |
+
+4. Click **Analyse batch**. The analysis runs server-side on the uploaded file.
+5. Expected result: severity **Warning**, anomaly score about 0.845 against a
+   threshold of 0.498.
+
+**What to look at.** IRNSS-1Q is an invented satellite with four years of
+telemetry carrying a slow clock drift that the model has never seen. The drift
+begins on day 900, but a fixed-limit check on the raw channels does not
+register it until day 1285 — 385 days of degradation below the alarm limit.
+Open the Satellite view and use the log-scale chart to see the trace sitting in
+the noise floor before it rises.
+
+Cadence must be Daily; the server rejects other cadences because windowing
+non-daily rows would produce meaningless scores.
+
 NavIC Pulse watches the rubidium atomic clocks on NavIC navigation satellites
 and flags a degrading clock from its ground-segment telemetry. It trains an
 autoencoder on healthy satellites only, scores every 30-day telemetry window by
